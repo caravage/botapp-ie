@@ -111,17 +111,17 @@ function showPhaseOverlay() {
     
     if (phase === 'Prep') {
         html = `
-            <div class="phase-item"><span class="icon">◆</span> Shuffle bot card piles</div>
-            <div class="phase-item"><span class="icon">◆</span> Bots take stability +1 if stability <= 2</div>`;
+            <div class="phase-item"><span class="icon">*</span> Shuffle bot card piles</div>
+            <div class="phase-item"><span class="icon">*</span> Bots take stability +1 if stability <= 2</div>`;
         const qual = NATIONS.filter(n => gameState.nations[n].isBot && gameState.nations[n].stability <= 2);
         if (qual.length) {
-            html += `<div class="phase-item"><span class="icon">-></span> <strong>Eligible:</strong> ${qual.join(', ')}</div>`;
+            html += `<div class="phase-item"><span class="icon">></span> <strong>Eligible:</strong> ${qual.join(', ')}</div>`;
         }
         document.getElementById('phaseBtn').textContent = 'Done -> Diplomacy';
     } else {
         html = `
-            <div class="phase-item"><span class="icon">◆</span> Bots don't participate in diplomacy</div>
-            <div class="phase-item"><span class="icon">◆</span> Add Home Card to each bot pile:</div>
+            <div class="phase-item"><span class="icon">*</span> Bots don't participate in diplomacy</div>
+            <div class="phase-item"><span class="icon">*</span> Add Home Card to each bot pile:</div>
             <div class="hc-list">
                 ${NATIONS.filter(n => gameState.nations[n].isBot).map(n => 
                     `<div class="hc-row"><span class="hc-nation">${n}</span><span class="hc-pos">${getHCPlacement(n)}</span></div>`
@@ -142,6 +142,12 @@ function advancePhase() {
     gameState.actionCount = 0;
     
     if (gameState.phase === 2) {
+        // Check for Metternich's Legacy (AU bot at game start)
+        if (gameState.turn === 1 && gameState.nations.AU.isBot && !gameState.metternichDone) {
+            showMetternichOverlay();
+            return;
+        }
+        
         const first = NATIONS.find(n => gameState.nations[n].isBot);
         if (first) gameState.activeNation = first;
     }
@@ -159,6 +165,111 @@ function advancePhase() {
         }
     }
     
+    saveGame();
+    renderApp();
+}
+
+// Metternich's Legacy overlay for AU bot
+let metternichState = {};
+
+function showMetternichOverlay() {
+    const o = document.getElementById('phaseOverlay');
+    document.getElementById('phaseTitle').textContent = "Metternich's Legacy";
+    renderMetternichContent();
+    o.classList.add('show');
+}
+
+function renderMetternichContent() {
+    let html = `
+        <div class="phase-item"><span class="icon">*</span> AU gains an alliance with <strong>two minor powers</strong> that do not contain an opponent's diplomatic marker.</div>
+        <div class="phase-item"><span class="icon">*</span> Roll BDIT Main Map to determine regions:</div>`;
+    
+    // First alliance
+    if (!metternichState.alliance1Done) {
+        html += renderMetternichBDIT(1);
+    } else {
+        html += `<div class="phase-item" style="opacity: 0.6;"><span class="icon">OK</span> Alliance 1: ${metternichState.alliance1Region} -> ${metternichState.alliance1Nation}</div>`;
+        
+        // Second alliance
+        if (!metternichState.alliance2Done) {
+            html += renderMetternichBDIT(2);
+        } else {
+            html += `<div class="phase-item" style="opacity: 0.6;"><span class="icon">OK</span> Alliance 2: ${metternichState.alliance2Region} -> ${metternichState.alliance2Nation}</div>`;
+            html += `<button class="btn phase-btn" onclick="finishMetternich()">Continue to Action Phase</button>`;
+        }
+    }
+    
+    document.getElementById('phaseContent').innerHTML = html;
+    document.getElementById('phaseBtn').style.display = 'none';
+}
+
+function renderMetternichBDIT(allianceNum) {
+    const prefix = `met${allianceNum}_`;
+    const keyRegionRoll = prefix + 'region_roll';
+    const keyNationRoll = prefix + 'nation_roll';
+    
+    // AU Main Map rules: 1-2 Germany, 3-4 Italy, 5-6 Balkans
+    const auRules = { 1: 'Germany', 2: 'Germany', 3: 'Italy', 4: 'Italy', 5: 'Balkans', 6: 'Balkans' };
+    
+    if (!metternichState[keyRegionRoll]) {
+        return `
+            <div class="question-box" style="margin: 1rem 0;">
+                <div class="question-text">Alliance ${allianceNum}: Roll for region (AU Main Map)</div>
+                <div class="question-btns">
+                    <button class="q-btn yes" onclick="rollMetternichRegion(${allianceNum})">Roll Die</button>
+                </div>
+            </div>`;
+    }
+    
+    const regionRoll = metternichState[keyRegionRoll];
+    const region = auRules[regionRoll];
+    
+    if (!metternichState[keyNationRoll]) {
+        return `
+            <div style="margin: 0.5rem 0;">
+                ${diceHTML(regionRoll, 'Region Roll')}
+                <div class="step-item" style="margin-top: 0.5rem;">
+                    <span class="step-icon">></span>
+                    <span class="step-text">Alliance ${allianceNum} Region: <strong>${region}</strong></span>
+                </div>
+            </div>
+            <div class="question-box">
+                <div class="question-text">Roll for nation in ${region}:</div>
+                <div class="question-btns">
+                    <button class="q-btn yes" onclick="rollMetternichNation(${allianceNum}, '${region}')">Roll Die</button>
+                </div>
+            </div>`;
+    }
+    
+    return '';
+}
+
+function rollMetternichRegion(allianceNum) {
+    metternichState[`met${allianceNum}_region_roll`] = rollDie();
+    renderMetternichContent();
+}
+
+function rollMetternichNation(allianceNum, region) {
+    const nationRoll = rollDie();
+    metternichState[`met${allianceNum}_nation_roll`] = nationRoll;
+    const nation = getBDITResult(region, nationRoll);
+    
+    metternichState[`alliance${allianceNum}Region`] = region;
+    metternichState[`alliance${allianceNum}Nation`] = nation;
+    metternichState[`alliance${allianceNum}Done`] = true;
+    
+    renderMetternichContent();
+}
+
+function finishMetternich() {
+    gameState.metternichDone = true;
+    metternichState = {};
+    document.getElementById('phaseBtn').style.display = '';
+    
+    const first = NATIONS.find(n => gameState.nations[n].isBot);
+    if (first) gameState.activeNation = first;
+    
+    document.getElementById('phaseOverlay').classList.remove('show');
     saveGame();
     renderApp();
 }
@@ -235,20 +346,6 @@ function startNextActionRound() {
     gameState.actionCount++;
     const firstBot = NATIONS.find(n => gameState.nations[n].isBot);
     gameState.activeNation = firstBot || null;
-    saveGame();
-    renderApp();
-}
-
-// Change turn function
-function changeTurn(newTurn) {
-    gameState.turn = parseInt(newTurn);
-    saveGame();
-    renderApp();
-}
-
-// Change WTT function
-function changeWTT(newWTT) {
-    gameState.wtt = parseInt(newWTT);
     saveGame();
     renderApp();
 }
