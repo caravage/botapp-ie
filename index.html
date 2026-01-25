@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imperial Elegy - Bot Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="screen active" id="selectorScreen">
+    <h1>Imperial Elegy</h1>
+    <p class="subtitle">Bot Companion</p>
+    <div class="game-slots" id="gameSlots"></div>
+    <div class="game-actions">
+        <button class="btn" id="btnLoad" disabled onclick="loadSelectedGame()">Continue</button>
+        <button class="btn btn-secondary" onclick="showSetup()">New Game</button>
+        <button class="btn btn-secondary btn-small" id="btnDelete" disabled onclick="deleteSelectedGame()">Delete</button>
+    </div>
+</div>
+
+<div class="screen" id="setupScreen">
+    <h1 style="font-size:1.8rem;margin-bottom:2rem">New Game Setup</h1>
+    <div class="setup-nations" id="setupNations"></div>
+    <div class="setup-row">
+        <div class="setup-field">
+            <label>Starting Turn</label>
+            <select id="setupTurn">
+                <option value="1">Turn 1</option>
+                <option value="2">Turn 2</option>
+                <option value="3">Turn 3</option>
+                <option value="4">Turn 4</option>
+                <option value="5">Turn 5</option>
+                <option value="6">Turn 6</option>
+                <option value="7">Turn 7</option>
+            </select>
+        </div>
+        <div class="setup-field">
+            <label>Starting WTT</label>
+            <input type="number" id="setupWTT" value="0" min="0">
+        </div>
+    </div>
+    <div class="game-actions">
+        <button class="btn" onclick="startGame()">Start Game</button>
+        <button class="btn btn-secondary" onclick="showScreen('selectorScreen');renderGameSlots()">Back</button>
+    </div>
+</div>
+
+<div class="app" id="mainApp">
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <span class="app-title">Imperial Elegy</span>
+            <div class="stat-pills">
+                <div class="stat-pill"><span class="label">Turn</span><span class="value" id="turnVal">1</span></div>
+                <div class="stat-pill"><span class="label">WTT</span><span class="value" id="wttVal">0</span></div>
+            </div>
+            <div class="phase-badge" id="phaseBadge">Prep Phase</div>
+        </div>
+        <div>
+            <button class="btn btn-small btn-secondary" onclick="exitGame()">Exit</button>
+        </div>
+    </div>
+    
+    <div class="main-layout">
+        <div class="log-panel">
+            <h3>Action Log</h3>
+            <div class="log-entries" id="logEntries"></div>
+        </div>
+        
+        <div class="decision-area">
+            <div class="nation-bar" id="nationBar"></div>
+            <div class="decision-content" id="decisionContent"></div>
+        </div>
+        
+        <div class="state-panel">
+            <h3>Nations</h3>
+            <div id="stateCards"></div>
+        </div>
+    </div>
+</div>
+
+<div class="phase-overlay" id="phaseOverlay">
+    <div class="phase-modal">
+        <h2 id="phaseTitle">Prep Phase</h2>
+        <div id="phaseContent"></div>
+        <button class="btn phase-btn" id="phaseBtn" onclick="advancePhase()">Done</button>
+    </div>
+</div>
+
+<!-- Load scripts in dependency order -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/dice.js"></script>
+<script src="js/homeCards.js"></script>
+<script src="js/priority1.js"></script>
+<script src="js/priority2.js"></script>
+<script src="js/decisionTree.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
