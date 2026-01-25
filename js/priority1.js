@@ -1,14 +1,40 @@
 // priority1.js - Priority 1 decision logic
 
+// Map Home Card names to their nations
+const HOME_CARD_NATIONS = {
+    'Otto von Bismarck': 'GE',
+    'German General Staff': 'GE',
+    'Sun Never Sets': 'UK',
+    'Balance of Power': 'UK',
+    'The City of Light': 'FR',
+    'Aux Armes, Citoyens!': 'FR',
+    'Habsburg Dynasty': 'AU',
+    'Kaiserreich': 'AU',
+    'Russo-Turkish Wars': 'RU',
+    'God Save the Tsar': 'RU',
+    'Modernization': 'OT',
+    'Jihad': 'OT'
+};
+
+function isHomeCardForNation(card, nation) {
+    // Check if card is a Home Card type
+    if (card.type !== 'Home') return false;
+    // Check if this Home Card belongs to the active nation
+    const cardNation = HOME_CARD_NATIONS[card.name];
+    return cardNation === nation;
+}
+
 function getPriority1Checks(nation, card, gs) {
     const ns = gs.nations[nation];
     const checks = [];
     
     // 1. Play Home Card
-    const isHomeCard = card.type === 'Home' && card.nation === nation;
+    const isHomeCard = isHomeCardForNation(card, nation);
     checks.push({
         label: 'Play Home Card',
-        text: 'Resolve this nation\'s revealed Home Card.',
+        text: isHomeCard 
+            ? `Resolve ${nation}'s Home Card: ${card.name}` 
+            : `Not a ${nation} Home Card`,
         action: `goToPhase('homecard_resolve')`,
         possible: isHomeCard
     });
