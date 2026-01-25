@@ -15,7 +15,7 @@ function getHCPosition(nation, gs) {
 }
 
 // BDIT - Bot Diplomatic Interest Table
-// Structure: BDIT[region][dieResult] = nation (or null if no interest)
+// Structure: BDIT[region][dieResult] = nation
 const BDIT = {
     // Main Map
     'Germany': {
@@ -28,7 +28,7 @@ const BDIT = {
         1: 'GE', 2: 'GE', 3: 'UK', 4: 'FR', 5: 'FR', 6: 'FR'
     },
     'Balkans': {
-        1: 'AU', 2: 'AU', 3: 'AU', 4: 'RU', 5: 'RU', 6: 'OT'  // OT* = always diplomacy/ally Egypt if able
+        1: 'AU', 2: 'AU', 3: 'AU', 4: 'RU', 5: 'RU', 6: 'OT'
     },
     // Submaps
     'Africa': {
@@ -42,16 +42,21 @@ const BDIT = {
     }
 };
 
-// Regions list for selection
-const BDIT_REGIONS = [
-    { id: 'Germany', name: 'Germany', map: 'Main Map' },
-    { id: 'Italy', name: 'Italy', map: 'Main Map' },
-    { id: 'Low Countries', name: 'Low Countries', map: 'Main Map' },
-    { id: 'Balkans', name: 'Balkans', map: 'Main Map' },
-    { id: 'Africa', name: 'Africa', map: 'Submap' },
-    { id: 'Great Game', name: 'Great Game', map: 'Submap' },
-    { id: 'Japan + Pacific', name: 'Japan + Pacific', map: 'Submap' }
+// Regions list
+const BDIT_REGIONS_MAIN = [
+    { id: 'Germany', name: 'Germany' },
+    { id: 'Italy', name: 'Italy' },
+    { id: 'Low Countries', name: 'Low Countries' },
+    { id: 'Balkans', name: 'Balkans' }
 ];
+
+const BDIT_REGIONS_SUB = [
+    { id: 'Africa', name: 'Africa' },
+    { id: 'Great Game', name: 'Great Game' },
+    { id: 'Japan + Pacific', name: 'Japan + Pacific' }
+];
+
+const BDIT_REGIONS = [...BDIT_REGIONS_MAIN, ...BDIT_REGIONS_SUB];
 
 // Get BDIT result for a region and die roll
 function getBDITResult(region, dieRoll) {
@@ -60,8 +65,18 @@ function getBDITResult(region, dieRoll) {
     return regionData[dieRoll] || null;
 }
 
-// Render BDIT roll interface
+// Render BDIT roll interface - ALL regions
 function renderBDITRoll(dec, prefix = '', context = '') {
+    return renderBDITRollWithRegions(dec, prefix, context, BDIT_REGIONS);
+}
+
+// Render BDIT roll interface - MAIN MAP only
+function renderBDITRollMainMap(dec, prefix = '', context = '') {
+    return renderBDITRollWithRegions(dec, prefix, context, BDIT_REGIONS_MAIN, true);
+}
+
+// Generic BDIT roll with specified regions
+function renderBDITRollWithRegions(dec, prefix, context, regions, mainMapOnly = false) {
     const keyRegion = prefix + 'bdit_region';
     const keyRoll = prefix + 'bdit_roll';
     
@@ -69,16 +84,13 @@ function renderBDITRoll(dec, prefix = '', context = '') {
     if (!dec[keyRegion]) {
         let html = `<div class="question-box">
             <div class="question-text">🎲 BDIT: Select target region${context ? ' for ' + context : ''}:</div>
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Main Map:</div>`;
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         
-        BDIT_REGIONS.filter(r => r.map === 'Main Map').forEach(r => {
-            html += `<button class="q-btn" onclick="selectBDITRegion('${prefix}', '${r.id}')">${r.name}</button>`;
-        });
+        if (mainMapOnly) {
+            html += `<div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Main Map only:</div>`;
+        }
         
-        html += `<div style="font-size: 0.8rem; color: var(--text-muted); margin: 0.5rem 0 0.25rem;">Submaps:</div>`;
-        
-        BDIT_REGIONS.filter(r => r.map === 'Submap').forEach(r => {
+        regions.forEach(r => {
             html += `<button class="q-btn" onclick="selectBDITRegion('${prefix}', '${r.id}')">${r.name}</button>`;
         });
         
