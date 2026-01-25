@@ -140,11 +140,6 @@ function renderP2() {
 }
 
 function renderExcess() {
-    if (!decision.bmpit) decision.bmpit = [rollDie(), rollDie()];
-    const [d1, d2] = decision.bmpit;
-    const res = getBMPITResult(d1, d2);
-    const finalLog = `P2: ${decision.p2Log}; Excess: BMPIT ${res.target}→${res.influence}`;
-    
     let html = `
     <div class="priority-section">
         <div class="priority-header done">
@@ -156,10 +151,37 @@ function renderExcess() {
         <div class="priority-header active">
             <span class="status-dot"></span>Excess CP
         </div>
-        <div class="priority-content">
+        <div class="priority-content">`;
+    
+    // Step 1: Build Army first
+    if (!decision.excess_army_done) {
+        html += `
             <div class="step-item action">
-                <span class="step-icon">→</span>
-                <span class="step-text">Spend ALL remaining CP on the Major Power Influence Table (BMPIT).</span>
+                <span class="step-icon">1️⃣</span>
+                <span class="step-text"><strong>First:</strong> Build army if able.</span>
+            </div>
+            <div class="question-box">
+                <div class="question-text">Did the bot build an army? Any CP still remaining?</div>
+                <div class="question-btns">
+                    <button class="q-btn" onclick="excessArmyDone(true)">Army built, CP remaining</button>
+                    <button class="q-btn" onclick="excessArmyDone(false)">No more CP / Can't build</button>
+                </div>
+            </div>`;
+    } else if (decision.excess_army_done === 'more_cp') {
+        // Step 2: BMPIT with remaining CP
+        if (!decision.bmpit) decision.bmpit = [rollDie(), rollDie()];
+        const [d1, d2] = decision.bmpit;
+        const res = getBMPITResult(d1, d2);
+        const finalLog = `P2: ${decision.p2Log}; Excess: Army + BMPIT ${res.target}→${res.influence}`;
+        
+        html += `
+            <div class="step-item" style="opacity: 0.5;">
+                <span class="step-icon">✓</span>
+                <span class="step-text">Army built</span>
+            </div>
+            <div class="step-item action">
+                <span class="step-icon">2️⃣</span>
+                <span class="step-text"><strong>Then:</strong> Spend remaining CP on BMPIT (Major Power Influence Table).</span>
             </div>
             <div style="margin:0.75rem 0">
                 ${diceHTML(d1, 'Target')} ${diceHTML(d2, 'Influence')}
@@ -171,11 +193,33 @@ function renderExcess() {
             ${res.doubles ? '<div class="step-item"><span class="step-icon">!</span><span class="step-text">Doubles rolled: Bot will influence Italy if able.</span></div>' : ''}
             <div class="action-box">
                 <h4>Action</h4>
-                <div class="action-text">P2 + Excess CP: ${res.target} → ${res.influence}</div>
+                <div class="action-text">Excess CP: Army + BMPIT ${res.target} → ${res.influence}</div>
                 <button class="confirm-btn" onclick="confirmAction('${finalLog.replace(/'/g, "\\'")}')">Confirm</button>
+            </div>`;
+    } else {
+        // No more CP after army (or couldn't build)
+        const finalLog = `P2: ${decision.p2Log}; Excess: Army build (no remaining CP)`;
+        html += `
+            <div class="step-item" style="opacity: 0.5;">
+                <span class="step-icon">✓</span>
+                <span class="step-text">Army build attempted</span>
             </div>
+            <div class="action-box">
+                <h4>Action</h4>
+                <div class="action-text">Excess CP spent on army build.</div>
+                <button class="confirm-btn" onclick="confirmAction('${finalLog.replace(/'/g, "\\'")}')">Confirm</button>
+            </div>`;
+    }
+    
+    html += `
         </div>
     </div>`;
     
     return html;
+}
+
+// Helper for excess CP flow
+function excessArmyDone(hasMoreCP) {
+    decision.excess_army_done = hasMoreCP ? 'more_cp' : 'done';
+    renderApp();
 }
