@@ -8,12 +8,6 @@ function diceHTML(val, label = '') {
     return `<div class="dice-box"><div class="dice">${val}</div>${label ? `<span class="dice-label">${label}</span>` : ''}</div>`;
 }
 
-function getHCPosition(nation, gs) {
-    const roll = rollDie();
-    const positions = ['Top', '2nd', '3rd', '4th', '5th', 'Bottom'];
-    return `Position ${roll} (${positions[roll - 1]})`;
-}
-
 // BDIT - Bot Diplomatic Interest Table
 // Structure: BDIT[region][dieResult] = nation
 const BDIT = {
@@ -42,24 +36,25 @@ const BDIT = {
     }
 };
 
-// Main Map regions for die roll mapping (1-4)
-const BDIT_MAIN_MAP_REGIONS = ['Germany', 'Italy', 'Low Countries', 'Balkans'];
+// Nation-specific region determination for Main Map
+const BDIT_MAIN_MAP_RULES = {
+    'GE': { type: 'roll', results: { 1: 'Germany', 2: 'Germany', 3: 'Germany', 4: 'Germany', 5: 'Low Countries', 6: 'Low Countries' } },
+    'UK': { type: 'fixed', region: 'Low Countries' },
+    'FR': { type: 'roll', results: { 1: 'Italy', 2: 'Italy', 3: 'Italy', 4: 'Low Countries', 5: 'Low Countries', 6: 'Low Countries' } },
+    'AU': { type: 'roll', results: { 1: 'Germany', 2: 'Germany', 3: 'Italy', 4: 'Italy', 5: 'Balkans', 6: 'Balkans' } },
+    'RU': { type: 'fixed', region: 'Balkans' },
+    'OT': { type: 'fixed', region: 'Balkans', note: 'Unless diplomacy/ally with Egypt possible' }
+};
 
-// All regions
-const BDIT_REGIONS_MAIN = [
-    { id: 'Germany', name: 'Germany' },
-    { id: 'Italy', name: 'Italy' },
-    { id: 'Low Countries', name: 'Low Countries' },
-    { id: 'Balkans', name: 'Balkans' }
-];
-
-const BDIT_REGIONS_SUB = [
-    { id: 'Africa', name: 'Africa' },
-    { id: 'Great Game', name: 'Great Game' },
-    { id: 'Japan + Pacific', name: 'Japan + Pacific' }
-];
-
-const BDIT_REGIONS = [...BDIT_REGIONS_MAIN, ...BDIT_REGIONS_SUB];
+// Nation-specific region determination for Submaps
+const BDIT_SUBMAP_RULES = {
+    'GE': { type: 'roll', results: { 1: 'Africa', 2: 'Africa', 3: 'Africa', 4: 'Africa', 5: 'Japan + Pacific', 6: 'Japan + Pacific' } },
+    'UK': { type: 'roll', results: { 1: 'Africa', 2: 'Africa', 3: 'Africa', 4: 'Great Game', 5: 'Great Game', 6: 'Japan + Pacific' } },
+    'FR': { type: 'roll', results: { 1: 'Africa', 2: 'Africa', 3: 'Africa', 4: 'Africa', 5: 'Japan + Pacific', 6: 'Japan + Pacific' } },
+    'AU': { type: 'none' }, // AU doesn't use submaps
+    'RU': { type: 'fixed', region: 'Great Game' },
+    'OT': { type: 'roll', results: { 1: 'Africa', 2: 'Africa', 3: 'Africa', 4: 'Great Game', 5: 'Great Game', 6: 'Great Game' } }
+};
 
 // Get BDIT result for a region and die roll
 function getBDITResult(region, dieRoll) {
@@ -68,169 +63,223 @@ function getBDITResult(region, dieRoll) {
     return regionData[dieRoll] || null;
 }
 
-// Render BDIT roll interface - select region then roll
+// Main BDIT Roll function
 function renderBDITRoll(dec, prefix = '', context = '') {
-    return renderBDITRollWithRegions(dec, prefix, context, BDIT_REGIONS);
-}
-
-// Render BDIT roll on MAIN MAP - rolls dice to determine region, then rolls for nation
-function renderBDITRollMainMap(dec, prefix = '', context = '') {
+    const nation = gameState.activeNation;
+    const keyMapChoice = prefix + 'bdit_map';
     const keyRegionRoll = prefix + 'bdit_region_roll';
     const keyNationRoll = prefix + 'bdit_nation_roll';
     
-    // Step 1: Roll for region (1-4 maps to the 4 main map regions)
-    if (!dec[keyRegionRoll]) {
+    // Step 1: Choose map type
+    if (!dec[keyMapChoice]) {
+        let options = `
+            <button class="q-btn" onclick="selectBDITMap('${prefix}', 'main')">Main Map</button>`;
+        
+        // AU doesn't use submaps
+        if (nation !== 'AU') {
+            options += `
+                <button class="q-btn" onclick="selectBDITMap('${prefix}', 'submap')">Submaps</button>`;
+        }
+        
+        options += `
+            <button class="q-btn" onclick="selectBDITMap('${prefix}', 'random')">Random</button>`;
+        
         return {
-            type: 'bdit_roll_region',
+            type: 'bdit_map_select',
             html: `<div class="question-box">
-                <div class="question-text">BDIT Main Map: Roll die to determine region${context ? ' for ' + context : ''}</div>
-                <div class="question-btns">
-                    <button class="q-btn yes" onclick="rollBDITMainMapRegion('${prefix}')">Roll Die</button>
+                <div class="question-text">BDIT${context ? ' for ' + context : ''}: Select map type</div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                    ${options}
                 </div>
             </div>`
         };
     }
     
-    // Determine region from roll (1-2: Germany, 3: Italy, 4: Low Countries, 5-6: Balkans)
-    const regionRoll = dec[keyRegionRoll];
-    let region;
-    if (regionRoll <= 2) region = 'Germany';
-    else if (regionRoll === 3) region = 'Italy';
-    else if (regionRoll === 4) region = 'Low Countries';
-    else region = 'Balkans';
+    const mapChoice = dec[keyMapChoice];
+    const rules = mapChoice === 'main' ? BDIT_MAIN_MAP_RULES[nation] : BDIT_SUBMAP_RULES[nation];
     
-    // Step 2: Roll for nation within that region
+    // Handle random choice
+    if (mapChoice === 'random') {
+        if (!dec[prefix + 'bdit_random_roll']) {
+            return {
+                type: 'bdit_random',
+                html: `<div class="question-box">
+                    <div class="question-text">Roll to determine Main Map or Submap:</div>
+                    <div class="question-btns">
+                        <button class="q-btn yes" onclick="rollBDITRandom('${prefix}')">Roll Die</button>
+                    </div>
+                </div>`
+            };
+        }
+        const randomRoll = dec[prefix + 'bdit_random_roll'];
+        dec[keyMapChoice] = randomRoll <= 3 ? 'main' : 'submap';
+        // Re-run with determined map
+        return renderBDITRoll(dec, prefix, context);
+    }
+    
+    // Step 2: Determine region based on nation rules
+    let region;
+    let regionRollHtml = '';
+    
+    if (rules.type === 'fixed') {
+        region = rules.region;
+        if (rules.note) {
+            regionRollHtml = `<div style="font-size: 0.85rem; font-style: italic; color: var(--text-muted); margin: 0.5rem 0;">${rules.note}</div>`;
+        }
+    } else if (rules.type === 'roll') {
+        if (!dec[keyRegionRoll]) {
+            return {
+                type: 'bdit_region_roll',
+                html: `<div class="question-box">
+                    <div class="question-text">${nation} on ${mapChoice === 'main' ? 'Main Map' : 'Submaps'}: Roll for region</div>
+                    <div class="question-btns">
+                        <button class="q-btn yes" onclick="rollBDITRegion('${prefix}')">Roll Die</button>
+                    </div>
+                </div>`
+            };
+        }
+        const regionRoll = dec[keyRegionRoll];
+        region = rules.results[regionRoll];
+        regionRollHtml = `${diceHTML(regionRoll, 'Region Roll')}
+            <div class="step-item" style="margin-top: 0.5rem;">
+                <span class="step-icon">></span>
+                <span class="step-text">Region: <strong>${region}</strong></span>
+            </div>`;
+    } else if (rules.type === 'none') {
+        return {
+            type: 'bdit_error',
+            html: `<div class="step-item"><span class="step-icon">!</span><span class="step-text">${nation} cannot use Submaps. Please select Main Map.</span></div>`
+        };
+    }
+    
+    // Step 3: Roll for nation within region
     if (!dec[keyNationRoll]) {
         return {
-            type: 'bdit_roll_nation',
-            html: `<div style="margin: 0.5rem 0;">
-                ${diceHTML(regionRoll, 'Region Roll')}
-                <div class="step-item" style="margin-top: 0.5rem;">
-                    <span class="step-icon">></span>
-                    <span class="step-text">Region: <strong>${region}</strong></span>
-                </div>
-            </div>
+            type: 'bdit_nation_roll',
+            html: `<div style="margin: 0.5rem 0;">${regionRollHtml}</div>
             <div class="question-box">
-                <div class="question-text">Now roll for nation in ${region}:</div>
+                <div class="question-text">Roll for nation in ${region}:</div>
                 <div class="question-btns">
-                    <button class="q-btn yes" onclick="rollBDITMainMapNation('${prefix}')">Roll Die</button>
+                    <button class="q-btn yes" onclick="rollBDITNation('${prefix}')">Roll Die</button>
                 </div>
             </div>`
         };
     }
     
-    // Step 3: Show final result
+    // Step 4: Show final result
     const nationRoll = dec[keyNationRoll];
-    const nation = getBDITResult(region, nationRoll);
+    const resultNation = getBDITResult(region, nationRoll);
     
     let note = '';
-    if (region === 'Balkans' && nation === 'OT') {
+    if (region === 'Balkans' && resultNation === 'OT') {
         note = '<div style="font-size: 0.85rem; font-style: italic; color: var(--text-muted); margin-top: 0.5rem;">Note: OT will always diplomacy/ally Egypt if able</div>';
     }
     
     return {
         type: 'bdit_result',
+        map: mapChoice,
         region: region,
-        regionRoll: regionRoll,
+        regionRoll: dec[keyRegionRoll],
         nationRoll: nationRoll,
-        nation: nation,
+        nation: resultNation,
         html: `<div style="margin: 1rem 0;">
-            ${diceHTML(regionRoll, 'Region')} ${diceHTML(nationRoll, 'Nation')}
+            ${regionRollHtml}
+            ${diceHTML(nationRoll, 'Nation Roll')}
             <div class="step-item action" style="margin-top: 0.5rem;">
                 <span class="step-icon">></span>
-                <span class="step-text">BDIT: <strong>${region}</strong> -> <strong>${nation}</strong></span>
+                <span class="step-text">BDIT Result: <strong>${region}</strong> -> <strong>${resultNation}</strong></span>
             </div>
             ${note}
         </div>`
     };
 }
 
-// Generic BDIT roll with region selection
-function renderBDITRollWithRegions(dec, prefix, context, regions) {
-    const keyRegion = prefix + 'bdit_region';
-    const keyRoll = prefix + 'bdit_roll';
+// BDIT for Main Map only (used by AU Turn 1, Metternich's Legacy)
+function renderBDITRollMainMapOnly(dec, prefix = '', context = '') {
+    const nation = gameState.activeNation || 'AU'; // Default to AU for Metternich
+    const rules = BDIT_MAIN_MAP_RULES[nation];
+    const keyRegionRoll = prefix + 'bdit_region_roll';
+    const keyNationRoll = prefix + 'bdit_nation_roll';
     
-    // Step 1: Select region
-    if (!dec[keyRegion]) {
-        let html = `<div class="question-box">
-            <div class="question-text">BDIT: Select target region${context ? ' for ' + context : ''}:</div>
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Main Map:</div>`;
-        
-        BDIT_REGIONS_MAIN.forEach(r => {
-            html += `<button class="q-btn" onclick="selectBDITRegion('${prefix}', '${r.id}')">${r.name}</button>`;
-        });
-        
-        html += `<div style="font-size: 0.8rem; color: var(--text-muted); margin: 0.5rem 0 0.25rem;">Submaps:</div>`;
-        
-        BDIT_REGIONS_SUB.forEach(r => {
-            html += `<button class="q-btn" onclick="selectBDITRegion('${prefix}', '${r.id}')">${r.name}</button>`;
-        });
-        
-        html += `</div></div>`;
-        
-        return {
-            type: 'bdit_select',
-            html: html
-        };
+    // Step 1: Determine region
+    let region;
+    let regionRollHtml = '';
+    
+    if (rules.type === 'fixed') {
+        region = rules.region;
+    } else if (rules.type === 'roll') {
+        if (!dec[keyRegionRoll]) {
+            return {
+                type: 'bdit_region_roll',
+                html: `<div class="question-box">
+                    <div class="question-text">${context ? context + ': ' : ''}${nation} Main Map - Roll for region</div>
+                    <div class="question-btns">
+                        <button class="q-btn yes" onclick="rollBDITRegion('${prefix}')">Roll Die</button>
+                    </div>
+                </div>`
+            };
+        }
+        const regionRoll = dec[keyRegionRoll];
+        region = rules.results[regionRoll];
+        regionRollHtml = `${diceHTML(regionRoll, 'Region Roll')}
+            <div class="step-item" style="margin-top: 0.5rem;">
+                <span class="step-icon">></span>
+                <span class="step-text">Region: <strong>${region}</strong></span>
+            </div>`;
     }
     
-    // Step 2: Roll die for that region
-    if (!dec[keyRoll]) {
+    // Step 2: Roll for nation
+    if (!dec[keyNationRoll]) {
         return {
-            type: 'bdit_roll',
-            html: `<div class="question-box">
-                <div class="question-text">BDIT Region: <strong>${dec[keyRegion]}</strong></div>
+            type: 'bdit_nation_roll',
+            html: `<div style="margin: 0.5rem 0;">${regionRollHtml}</div>
+            <div class="question-box">
+                <div class="question-text">Roll for nation in ${region}:</div>
                 <div class="question-btns">
-                    <button class="q-btn yes" onclick="rollBDITDie('${prefix}')">Roll Die</button>
+                    <button class="q-btn yes" onclick="rollBDITNation('${prefix}')">Roll Die</button>
                 </div>
             </div>`
         };
     }
     
-    // Step 3: Show result
-    const region = dec[keyRegion];
-    const roll = dec[keyRoll];
-    const nation = getBDITResult(region, roll);
-    
-    let note = '';
-    if (region === 'Balkans' && nation === 'OT') {
-        note = '<div style="font-size: 0.85rem; font-style: italic; color: var(--text-muted); margin-top: 0.5rem;">Note: OT will always diplomacy/ally Egypt if able</div>';
-    }
+    const nationRoll = dec[keyNationRoll];
+    const resultNation = getBDITResult(region, nationRoll);
     
     return {
         type: 'bdit_result',
+        map: 'main',
         region: region,
-        roll: roll,
-        nation: nation,
+        regionRoll: dec[keyRegionRoll],
+        nationRoll: nationRoll,
+        nation: resultNation,
         html: `<div style="margin: 1rem 0;">
-            ${diceHTML(roll, 'BDIT Roll')}
+            ${regionRollHtml}
+            ${diceHTML(nationRoll, 'Nation Roll')}
             <div class="step-item action" style="margin-top: 0.5rem;">
                 <span class="step-icon">></span>
-                <span class="step-text">BDIT: <strong>${region}</strong> -> <strong>${nation}</strong></span>
+                <span class="step-text">BDIT Result: <strong>${region}</strong> -> <strong>${resultNation}</strong></span>
             </div>
-            ${note}
         </div>`
     };
 }
 
 // Global functions for BDIT interaction
-function selectBDITRegion(prefix, region) {
-    decision[prefix + 'bdit_region'] = region;
+function selectBDITMap(prefix, mapType) {
+    decision[prefix + 'bdit_map'] = mapType;
     renderApp();
 }
 
-function rollBDITDie(prefix) {
-    decision[prefix + 'bdit_roll'] = rollDie();
+function rollBDITRandom(prefix) {
+    decision[prefix + 'bdit_random_roll'] = rollDie();
     renderApp();
 }
 
-function rollBDITMainMapRegion(prefix) {
+function rollBDITRegion(prefix) {
     decision[prefix + 'bdit_region_roll'] = rollDie();
     renderApp();
 }
 
-function rollBDITMainMapNation(prefix) {
+function rollBDITNation(prefix) {
     decision[prefix + 'bdit_nation_roll'] = rollDie();
     renderApp();
 }
