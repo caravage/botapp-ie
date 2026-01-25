@@ -86,6 +86,26 @@ function addLog(action) {
     });
 }
 
+// HC Placement rules for Diplomacy Phase
+function getHCPlacement(nation) {
+    // GE and OT: on top of their pile
+    // FR, AU, RU: shuffled in
+    // UK: on bottom of their pile
+    switch(nation) {
+        case 'GE':
+        case 'OT':
+            return 'TOP of pile';
+        case 'UK':
+            return 'BOTTOM of pile';
+        case 'FR':
+        case 'AU':
+        case 'RU':
+            return 'Shuffled in';
+        default:
+            return 'Shuffled in';
+    }
+}
+
 function showPhaseOverlay() {
     const o = document.getElementById('phaseOverlay');
     const phase = PHASES[gameState.phase];
@@ -103,12 +123,15 @@ function showPhaseOverlay() {
         document.getElementById('phaseBtn').textContent = 'Done → Diplomacy';
     } else {
         html = `
-            <div class="phase-item"><span class="icon">◆</span> Bots don't participate</div>
-            <div class="phase-item"><span class="icon">◆</span> Add random HC to each bot pile:</div>
+            <div class="phase-item"><span class="icon">◆</span> Bots don't participate in diplomacy</div>
+            <div class="phase-item"><span class="icon">◆</span> Add Home Card to each bot pile:</div>
             <div class="hc-list">
                 ${NATIONS.filter(n => gameState.nations[n].isBot).map(n => 
-                    `<div class="hc-row"><span class="hc-nation">${n}</span><span class="hc-pos">${getHCPosition(n, gameState)}</span></div>`
+                    `<div class="hc-row"><span class="hc-nation">${n}</span><span class="hc-pos">${getHCPlacement(n)}</span></div>`
                 ).join('')}
+            </div>
+            <div class="phase-item" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                <span class="icon">ℹ️</span> GE & OT: Top | FR, AU, RU: Shuffled | UK: Bottom
             </div>`;
         document.getElementById('phaseBtn').textContent = 'Done → Action';
     }
