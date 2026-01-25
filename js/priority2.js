@@ -124,7 +124,6 @@ function renderP2() {
                     </div>`;
             } else if (decision.q_uk_max_armies === 'yes') {
                 // UK at max armies - show pacification instead
-                const pacAction = getP2ActionText(1);
                 html += `
                     <div class="step-item" style="margin-top: 0.5rem;">
                         <span class="step-icon">!</span>
@@ -136,7 +135,7 @@ function renderP2() {
                     html += bdit.html;
                 } else {
                     html += bdit.html;
-                    const fullActionText = `Pacification (UK max armies): ${bdit.region} -> ${bdit.nation}`;
+                    const fullActionText = `Pacification (UK max armies): ${bdit.zone}`;
                     html += renderExcessCPQuestion(fullActionText);
                 }
             } else {
@@ -173,7 +172,7 @@ function renderP2() {
                 html += bdit.html;
             } else {
                 html += bdit.html;
-                const fullActionText = `${actionInfo.text}: ${bdit.region} -> ${bdit.nation}`;
+                const fullActionText = `${actionInfo.text}: ${bdit.zone}`;
                 html += renderExcessCPQuestion(fullActionText);
             }
         } else {
@@ -222,7 +221,7 @@ function renderExcess() {
                 <span class="step-text"><strong>First:</strong> Build army if able.</span>
             </div>
             <div class="question-box">
-                <div class="question-text">Did the bot build an army?</div>
+                <div class="question-text">Any CP remaining?</div>
                 <div class="question-btns">
                     <button class="q-btn" onclick="excessArmyDone(true)">CP Still Remaining</button>
                     <button class="q-btn" onclick="excessArmyDone(false)">No More CP</button>
