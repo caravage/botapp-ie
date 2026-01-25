@@ -88,9 +88,6 @@ function addLog(action) {
 
 // HC Placement rules for Diplomacy Phase
 function getHCPlacement(nation) {
-    // GE and OT: on top of their pile
-    // FR, AU, RU: shuffled in
-    // UK: on bottom of their pile
     switch(nation) {
         case 'GE':
         case 'OT':
@@ -115,12 +112,12 @@ function showPhaseOverlay() {
     if (phase === 'Prep') {
         html = `
             <div class="phase-item"><span class="icon">◆</span> Shuffle bot card piles</div>
-            <div class="phase-item"><span class="icon">◆</span> Bots take stability +1 if stability ≤ 2</div>`;
+            <div class="phase-item"><span class="icon">◆</span> Bots take stability +1 if stability <= 2</div>`;
         const qual = NATIONS.filter(n => gameState.nations[n].isBot && gameState.nations[n].stability <= 2);
         if (qual.length) {
-            html += `<div class="phase-item"><span class="icon">→</span> <strong>Eligible:</strong> ${qual.join(', ')}</div>`;
+            html += `<div class="phase-item"><span class="icon">-></span> <strong>Eligible:</strong> ${qual.join(', ')}</div>`;
         }
-        document.getElementById('phaseBtn').textContent = 'Done → Diplomacy';
+        document.getElementById('phaseBtn').textContent = 'Done -> Diplomacy';
     } else {
         html = `
             <div class="phase-item"><span class="icon">◆</span> Bots don't participate in diplomacy</div>
@@ -129,11 +126,8 @@ function showPhaseOverlay() {
                 ${NATIONS.filter(n => gameState.nations[n].isBot).map(n => 
                     `<div class="hc-row"><span class="hc-nation">${n}</span><span class="hc-pos">${getHCPlacement(n)}</span></div>`
                 ).join('')}
-            </div>
-            <div class="phase-item" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
-                <span class="icon">ℹ️</span> GE & OT: Top | FR, AU, RU: Shuffled | UK: Bottom
             </div>`;
-        document.getElementById('phaseBtn').textContent = 'Done → Action';
+        document.getElementById('phaseBtn').textContent = 'Done -> Action';
     }
     
     document.getElementById('phaseContent').innerHTML = html;
@@ -173,7 +167,7 @@ function renderDecisionArea() {
     const c = document.getElementById('decisionContent');
     
     if (gameState.phase !== 2) {
-        c.innerHTML = '<div class="empty-state"><div class="icon">⏳</div>Waiting for Action Phase</div>';
+        c.innerHTML = '<div class="empty-state"><div class="icon">...</div>Waiting for Action Phase</div>';
         return;
     }
     
@@ -183,11 +177,11 @@ function renderDecisionArea() {
         if (gameState.actionsDoneThisRound.length >= allBots.length && allBots.length > 0) {
             c.innerHTML = `
                 <div class="empty-state">
-                    <div class="icon">✅</div>All bots have acted.<br><br>
+                    <div class="icon">OK</div>All bots have acted.<br><br>
                     <button class="btn" onclick="startNextActionRound()">Start Next Action Round</button>
                 </div>`;
         } else {
-            c.innerHTML = '<div class="empty-state"><div class="icon">🎴</div>Select a bot nation</div>';
+            c.innerHTML = '<div class="empty-state"><div class="icon">...</div>Select a bot nation</div>';
         }
         return;
     }
@@ -241,6 +235,20 @@ function startNextActionRound() {
     gameState.actionCount++;
     const firstBot = NATIONS.find(n => gameState.nations[n].isBot);
     gameState.activeNation = firstBot || null;
+    saveGame();
+    renderApp();
+}
+
+// Change turn function
+function changeTurn(newTurn) {
+    gameState.turn = parseInt(newTurn);
+    saveGame();
+    renderApp();
+}
+
+// Change WTT function
+function changeWTT(newWTT) {
+    gameState.wtt = parseInt(newWTT);
     saveGame();
     renderApp();
 }
