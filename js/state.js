@@ -4,6 +4,16 @@ let currentGameSlot = null;
 let gameState = null;
 let decision = null;
 
+// Starting hand count per nation
+const STARTING_CARDS = {
+    'GE': 3,
+    'UK': 4,
+    'FR': 3,
+    'AU': 3,
+    'RU': 3,
+    'OT': 4
+};
+
 function saveGame() {
     if (currentGameSlot && gameState) {
         localStorage.setItem(`ie_game${currentGameSlot}`, JSON.stringify(gameState));
@@ -44,7 +54,7 @@ function createNationState(nation, isBot) {
         isBot: isBot,
         stability: 4,
         industry: nation === 'UK' ? 2 : (nation === 'OT' ? 0 : 1),
-        cards: 5,
+        cards: STARTING_CARDS[nation] || 3,
         germanyUnified: false,
         bismarckRemoved: false,
         frPacifying: false,
