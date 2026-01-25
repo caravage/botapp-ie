@@ -56,7 +56,6 @@ function getPriority1Checks(nation, card, gs) {
     });
 
     // 4. Industrialize
-    // FIXED LOGIC:
     // - WITHOUT auto-industry marker: can industrialize with ANY CP card
     // - WITH auto-industry marker: can ONLY industrialize with 1-2 CP cards
     let canIndustrialize;
@@ -106,14 +105,6 @@ function getPriority1Checks(nation, card, gs) {
         });
     }
     
-    // 7. All Bots Special (WTT >= 3)
-    checks.push({ 
-        label: 'All Bots Special', 
-        text: `Build armies if WTT is ≥ 3. (Current WTT: ${gs.wtt})`, 
-        log: 'P1 Action: WTT Army Build',
-        possible: gs.wtt >= 3
-    });
-    
     return checks;
 }
 
@@ -133,7 +124,7 @@ function renderP1() {
         let clickHandler = c.possible ? (c.action ? c.action : `confirmAction('${c.log.replace(/'/g, "\\'")}')`) : '';
         html += `
             <div class="step-item action selectable ${!c.possible ? 'impossible' : ''}" onclick="${clickHandler}">
-                <span class="step-icon">▶</span>
+                <span class="step-icon">></span>
                 <span class="step-text"><strong>${c.label}:</strong> ${c.text}</span>
             </div>`;
     });
@@ -142,7 +133,7 @@ function renderP1() {
             <div class="question-box" style="margin-top:2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
                 <div class="question-text">If no Priority 1 actions apply:</div>
                 <div class="question-btns">
-                    <button class="q-btn yes" onclick="goToPhase('priority2')">Go to Priority 2 →</button>
+                    <button class="q-btn yes" onclick="goToPhase('priority2')">Go to Priority 2</button>
                 </div>
             </div>
         </div>
