@@ -9,7 +9,7 @@ const HOME_CARD_LOGIC = {
                 return { 
                     type: 'question', 
                     text: 'Bot stability is at 6. Does this Home Card event give < 3 CPs value?', 
-                    options: [{label: 'Yes (< 3 CP value)', value: 'yes'}, {label: 'No (≥ 3 CP value)', value: 'no'}], 
+                    options: [{label: 'Yes (< 3 CP value)', value: 'yes'}, {label: 'No (>= 3 CP value)', value: 'no'}], 
                     key: 'q_general' 
                 };
             }
@@ -47,7 +47,7 @@ const HOME_CARD_LOGIC = {
                 return { 
                     type: 'action', 
                     text: 'GE does not meet manpower requirements. Place Bismarck on TOP of GE\'s card pile and draw the NEXT card.', 
-                    log: 'HC Action: Bismarck → top of pile, draw next card' 
+                    log: 'HC Action: Bismarck -> top of pile, draw next card' 
                 };
             }
             
@@ -73,7 +73,7 @@ const HOME_CARD_LOGIC = {
             // Not last card - WAR OF UNIFICATION
             return { 
                 type: 'action', 
-                text: `Play Bismarck to declare WAR OF UNIFICATION.\n\n📋 Target Priority:\n1. Minor powers first, then player-controlled spaces\n2. Attack minor powers WITHOUT player allies first\n3. Always attack TWO minor powers without allies if able`, 
+                text: `Play Bismarck to declare WAR OF UNIFICATION.\n\nTarget Priority:\n- Minor powers first, then player-controlled spaces\n- Attack minor powers WITHOUT player allies first\n- Always attack TWO minor powers without allies if able`, 
                 log: 'HC Action: Play Bismarck (War of Unification)' 
             };
         }
@@ -84,7 +84,7 @@ const HOME_CARD_LOGIC = {
         '_default': (dec, gs) => {
             return { 
                 type: 'action', 
-                text: 'Always play Sun Never Sets.\n\n⚠️ REMINDER: Balance of Power is not played from hand. Instead, every time ANY war is declared, roll a die. On 1-2, play Balance of Power if it\'s still unplayed.', 
+                text: 'Always play Sun Never Sets.\n\n<em>Note: Balance of Power is not played from hand. Instead, every time ANY war is declared, roll a die. On 1-2, play Balance of Power if it\'s still unplayed.</em>', 
                 log: 'HC Action: Play Sun Never Sets' 
             };
         }
@@ -118,18 +118,18 @@ const HOME_CARD_LOGIC = {
         '_default': (dec, gs) => {
             // Turn 1: Always Habsburg Dynasty with BDIT roll on Main Map
             if (gs.turn === 1) {
-                // Roll BDIT on Main Map regions only
+                // Roll BDIT on Main Map
                 const bdit = renderBDITRollMainMap(dec, 'au_t1_', 'Habsburg Dynasty Target');
                 if (bdit.type !== 'bdit_result') {
                     return { 
                         type: 'custom', 
-                        html: `<div class="step-item action"><span class="step-icon">👑</span><span class="step-text">Turn 1: Play Habsburg Dynasty. Roll BDIT on Main Map for target.</span></div>${bdit.html}`
+                        html: `<div class="step-item action"><span class="step-icon">></span><span class="step-text">Turn 1: Play Habsburg Dynasty. Roll BDIT on Main Map for target.</span></div>${bdit.html}`
                     };
                 }
                 return { 
                     type: 'action', 
-                    text: `Turn 1: Play Habsburg Dynasty.\n\nBDIT Target: ${bdit.region} → ${bdit.nation}`, 
-                    log: `HC Action: Play Habsburg Dynasty (T1 - ${bdit.region} → ${bdit.nation})`,
+                    text: `Turn 1: Play Habsburg Dynasty.\n\nBDIT Target: ${bdit.region} -> ${bdit.nation}`, 
+                    log: `HC Action: Play Habsburg Dynasty (T1 - ${bdit.region} -> ${bdit.nation})`,
                     prefix: bdit.html
                 };
             }
@@ -205,7 +205,7 @@ const HOME_CARD_LOGIC = {
             if (ns.industry < 3) {
                 return { 
                     type: 'action', 
-                    text: `Industry = ${ns.industry} (< 3): Always play Modernization.\n\n📝 Note: Other bots will not give OT a 3 CP card.`, 
+                    text: `Industry = ${ns.industry} (< 3): Always play Modernization.\n\n<em>Note: Other bots will not give OT a 3 CP card.</em>`, 
                     log: 'HC Action: Play Modernization (Industry < 3)' 
                 };
             }
@@ -216,14 +216,14 @@ const HOME_CARD_LOGIC = {
             if (dec.roll1 <= 2) {
                 return { 
                     type: 'action', 
-                    text: 'Industry ≥ 3 and roll = 1-2. Play Jihad.', 
+                    text: 'Industry >= 3 and roll = 1-2. Play Jihad.', 
                     log: 'HC Action: Play Jihad', 
                     prefix: html 
                 };
             }
             return { 
                 type: 'action', 
-                text: `Industry ≥ 3 and roll = ${dec.roll1}. Play Modernization.`, 
+                text: `Industry >= 3 and roll = ${dec.roll1}. Play Modernization.`, 
                 log: 'HC Action: Play Modernization', 
                 prefix: html 
             };
