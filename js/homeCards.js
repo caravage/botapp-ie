@@ -23,46 +23,35 @@ const HOME_CARD_LOGIC = {
         '_default': (dec, gs) => {
             const ns = gs.nations.GE;
             
-            // Check if German General Staff should be played instead
-            if (!dec.q_gss_check) {
-                if (ns.bismarckRemoved || ns.germanyUnified) {
-                    return {
-                        type: 'action',
-                        text: `Play German General Staff (${ns.bismarckRemoved ? 'Bismarck removed' : 'Germany unified'}).`,
-                        log: 'HC Action: Play German General Staff'
-                    };
-                }
-                dec.q_gss_check = 'done';
+            // Check if German General Staff should be played instead (Bismarck removed or Germany unified)
+            if (ns.bismarckRemoved || ns.germanyUnified) {
+                return {
+                    type: 'action',
+                    text: `Play German General Staff (${ns.bismarckRemoved ? 'Bismarck removed' : 'Germany unified'}).`,
+                    log: 'HC Action: Play German General Staff'
+                };
             }
 
-            // Bismarck logic
-            if (!dec.q_bismarck) {
+            // Bismarck logic - check manpower condition
+            if (!dec.q_manpower) {
                 return { 
                     type: 'question', 
                     text: 'Does GE have armies equal to their peacetime manpower limit AND at least 1 reserve army?', 
                     options: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}], 
-                    key: 'q_bismarck' 
+                    key: 'q_manpower' 
                 };
             }
             
-            if (dec.q_bismarck === 'yes') {
-                // Need BDIT for target
-                const bdit = renderBDITRoll(dec, 'ge_war_', 'Bismarck War Declaration');
-                if (bdit.type !== 'bdit_result') {
-                    return { 
-                        type: 'custom', 
-                        html: `<div class="step-item action"><span class="step-icon">⚔️</span><span class="step-text">Play Bismarck to DECLARE WAR.</span></div>${bdit.html}`
-                    };
-                }
+            if (dec.q_manpower === 'no') {
+                // Cannot declare war - draw next card
                 return { 
                     type: 'action', 
-                    text: `Play Bismarck to DECLARE WAR.\n\nBDIT Target: ${bdit.region} → ${bdit.nation}`, 
-                    log: `HC Action: Play Bismarck (War - ${bdit.region} → ${bdit.nation})`,
-                    prefix: bdit.html
+                    text: 'GE does not meet manpower requirements. Place Bismarck on TOP of GE\'s card pile and draw the NEXT card.', 
+                    log: 'HC Action: Bismarck → top of pile, draw next card' 
                 };
             }
             
-            // Bismarck not played - check if this is last card
+            // Manpower OK - check if last card
             if (!dec.q_last_card) {
                 return {
                     type: 'question',
@@ -73,17 +62,19 @@ const HOME_CARD_LOGIC = {
             }
             
             if (dec.q_last_card === 'yes') {
+                // Last card - play German General Staff instead
                 return {
                     type: 'action',
-                    text: 'Last card and won\'t declare war. Play German General Staff instead.',
+                    text: 'Last card - play German General Staff instead of declaring war.',
                     log: 'HC Action: Play German General Staff (last card)'
                 };
             }
             
+            // Not last card - WAR OF UNIFICATION
             return { 
                 type: 'action', 
-                text: 'GE does not declare war. Place Bismarck on TOP of GE\'s card pile. Then reveal and play the NEXT GE card.', 
-                log: 'HC Action: Bismarck → top of pile, play next card' 
+                text: `Play Bismarck to declare WAR OF UNIFICATION.\n\n📋 Target Priority:\n1. Minor powers first, then player-controlled spaces\n2. Attack minor powers WITHOUT player allies first\n3. Always attack TWO minor powers without allies if able`, 
+                log: 'HC Action: Play Bismarck (War of Unification)' 
             };
         }
     },
@@ -125,13 +116,14 @@ const HOME_CARD_LOGIC = {
     // AUSTRIA-HUNGARY
     AU: {
         '_default': (dec, gs) => {
-            // Turn 1: Always Habsburg Dynasty with BDIT
+            // Turn 1: Always Habsburg Dynasty with BDIT roll on Main Map
             if (gs.turn === 1) {
-                const bdit = renderBDITRoll(dec, 'au_t1_', 'Habsburg Dynasty Target');
+                // Roll BDIT on Main Map regions only
+                const bdit = renderBDITRollMainMap(dec, 'au_t1_', 'Habsburg Dynasty Target');
                 if (bdit.type !== 'bdit_result') {
                     return { 
                         type: 'custom', 
-                        html: `<div class="step-item action"><span class="step-icon">👑</span><span class="step-text">Turn 1: Play Habsburg Dynasty.</span></div>${bdit.html}`
+                        html: `<div class="step-item action"><span class="step-icon">👑</span><span class="step-text">Turn 1: Play Habsburg Dynasty. Roll BDIT on Main Map for target.</span></div>${bdit.html}`
                     };
                 }
                 return { 
@@ -142,28 +134,16 @@ const HOME_CARD_LOGIC = {
                 };
             }
             
-            // Later turns: Roll for which HC
+            // Later turns: Roll for which HC (1-2 = Habsburg, 3-6 = Kaiserreich)
             if (!dec.roll1) dec.roll1 = rollDie();
             let html = diceHTML(dec.roll1, 'AU HC Roll (1-2 = Habsburg)');
             
             if (dec.roll1 <= 2) {
-                // Habsburg Dynasty - now roll for war of unification
-                if (!dec.roll2) dec.roll2 = rollDie();
-                let html2 = html + ' ' + diceHTML(dec.roll2, 'War Roll (1-2 = War)');
-                
-                if (dec.roll2 <= 2) {
-                    return { 
-                        type: 'action', 
-                        text: 'Play Habsburg Dynasty to declare a WAR OF UNIFICATION targeting a neighboring space with a nationality that AU granted citizenship.', 
-                        log: 'HC Action: Habsburg Dynasty (War of Unification)', 
-                        prefix: html2
-                    };
-                }
                 return { 
                     type: 'action', 
-                    text: `War roll = ${dec.roll2}. Play Habsburg Dynasty (no war).`, 
-                    log: 'HC Action: Habsburg Dynasty (No War)', 
-                    prefix: html2
+                    text: `Roll = ${dec.roll1}. Play Habsburg Dynasty.`, 
+                    log: 'HC Action: Play Habsburg Dynasty', 
+                    prefix: html
                 };
             }
             
