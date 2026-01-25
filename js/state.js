@@ -14,6 +14,26 @@ const STARTING_CARDS = {
     'OT': 4
 };
 
+// Starting stability per nation
+const STARTING_STABILITY = {
+    'GE': 3,
+    'UK': 3,
+    'FR': 3,
+    'AU': 3,
+    'RU': 3,
+    'OT': 3
+};
+
+// Starting industry per nation
+const STARTING_INDUSTRY = {
+    'GE': 1,
+    'UK': 2,
+    'FR': 1,
+    'AU': 1,
+    'RU': 0,
+    'OT': 0
+};
+
 function saveGame() {
     if (currentGameSlot && gameState) {
         localStorage.setItem(`ie_game${currentGameSlot}`, JSON.stringify(gameState));
@@ -36,24 +56,24 @@ function getGameSummary(slot) {
     return `Turn ${d.turn}, ${bots} bot${bots !== 1 ? 's' : ''}`;
 }
 
-function createNewGameState(nations, turn, wtt) {
+function createNewGameState(nations, turn) {
     return {
         turn: turn,
         phase: 0,
-        wtt: wtt,
         nations: nations,
         activeNation: null,
         actionsDoneThisRound: [],
         actionCount: 0,
-        log: []
+        log: [],
+        metternichDone: false
     };
 }
 
 function createNationState(nation, isBot) {
     return {
         isBot: isBot,
-        stability: 4,
-        industry: nation === 'UK' ? 2 : (nation === 'OT' ? 0 : 1),
+        stability: STARTING_STABILITY[nation] || 3,
+        industry: STARTING_INDUSTRY[nation] || 0,
         cards: STARTING_CARDS[nation] || 3,
         germanyUnified: false,
         bismarckRemoved: false,
