@@ -77,8 +77,7 @@ function startGame() {
     
     gameState = createNewGameState(
         nations,
-        parseInt(document.getElementById('setupTurn').value),
-        parseInt(document.getElementById('setupWTT').value)
+        parseInt(document.getElementById('setupTurn').value)
     );
     
     saveGame();
@@ -95,12 +94,6 @@ function renderApp() {
     document.getElementById('turnVal').innerHTML = `
         <select onchange="changeTurn(this.value)" style="background: transparent; border: none; color: var(--gold); font-family: 'Cinzel', serif; cursor: pointer;">
             ${[1,2,3,4,5,6,7].map(t => `<option value="${t}" ${gameState.turn === t ? 'selected' : ''} style="background: var(--bg-dark);">T${t}</option>`).join('')}
-        </select>`;
-    
-    // WTT value - clickable to change
-    document.getElementById('wttVal').innerHTML = `
-        <select onchange="changeWTT(this.value)" style="background: transparent; border: none; color: var(--gold); font-family: 'Cinzel', serif; cursor: pointer;">
-            ${[0,1,2,3,4,5,6,7,8,9,10].map(w => `<option value="${w}" ${gameState.wtt === w ? 'selected' : ''} style="background: var(--bg-dark);">${w}</option>`).join('')}
         </select>`;
     
     document.getElementById('phaseBadge').textContent = PHASES[gameState.phase] + ' Phase';
@@ -122,6 +115,13 @@ function exitGame() {
     decision = null;
     showScreen('selectorScreen');
     renderGameSlots();
+}
+
+// Change turn function
+function changeTurn(newTurn) {
+    gameState.turn = parseInt(newTurn);
+    saveGame();
+    renderApp();
 }
 
 // Initialize on page load
