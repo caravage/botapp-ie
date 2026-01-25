@@ -119,7 +119,7 @@ const HOME_CARD_LOGIC = {
             // Turn 1: Always Habsburg Dynasty with BDIT roll on Main Map
             if (gs.turn === 1) {
                 // Roll BDIT on Main Map
-                const bdit = renderBDITRollMainMap(dec, 'au_t1_', 'Habsburg Dynasty Target');
+                const bdit = renderBDITRollMainMapOnly(dec, 'au_t1_', 'Habsburg Dynasty Target');
                 if (bdit.type !== 'bdit_result') {
                     return { 
                         type: 'custom', 
