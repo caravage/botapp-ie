@@ -169,74 +169,170 @@ function advancePhase() {
     renderApp();
 }
 
-// Metternich's Legacy overlay for AU bot
+// =====================================================
+// METTERNICH'S LEGACY - Special roll system for AU bot
+// =====================================================
+
 let metternichState = {};
 
 function showMetternichOverlay() {
+    metternichState = {};
     const o = document.getElementById('phaseOverlay');
     document.getElementById('phaseTitle').textContent = "Metternich's Legacy";
+    document.getElementById('phaseBtn').style.display = 'none';
     renderMetternichContent();
     o.classList.add('show');
 }
 
+function getMetternichZoneResult(roll) {
+    if (roll <= 2) {
+        return { zone: 'Germany', needsSecondRoll: true };
+    } else if (roll <= 4) {
+        return { zone: 'Italy', space: 'Naples', hasAlternative: true, altText: 'Naples already allied' };
+    } else {
+        return { zone: 'Balkans', space: 'Greece', hasAlternative: true, altText: 'Greece already allied' };
+    }
+}
+
+function getMetternichGermanySpace(roll) {
+    if (roll <= 2) return 'Hanover';
+    if (roll <= 4) return 'Saxony';
+    return 'Bavaria';
+}
+
+function getMetternichItalyAltSpace(roll) {
+    if (roll <= 3) return 'Tuscany';
+    return 'Rome';
+}
+
 function renderMetternichContent() {
     let html = `
-        <div class="phase-item"><span class="icon">*</span> AU gains an alliance with <strong>two minor powers</strong> that do not contain an opponent's diplomatic marker.</div>
-        <div class="phase-item"><span class="icon">*</span> Roll BDIT Main Map to determine regions:</div>`;
+        <div class="phase-item" style="margin-bottom: 1rem;">
+            AU gains an alliance with two minor powers that do not contain an opponent's diplomatic marker.
+        </div>`;
     
-    // First alliance
+    // First Alliance
     if (!metternichState.alliance1Done) {
-        html += renderMetternichBDIT(1);
+        html += renderMetternichAlliance(1);
     } else {
-        html += `<div class="phase-item" style="opacity: 0.6;"><span class="icon">OK</span> Alliance 1: ${metternichState.alliance1Region} -> ${metternichState.alliance1Nation}</div>`;
+        html += `<div class="phase-item" style="opacity: 0.6; margin-bottom: 1rem;">
+            <span class="icon">OK</span> <strong>${metternichState.alliance1Zone} - ${metternichState.alliance1Space}</strong>: First alliance
+        </div>`;
         
-        // Second alliance
+        // Second Alliance
         if (!metternichState.alliance2Done) {
-            html += renderMetternichBDIT(2);
+            html += renderMetternichAlliance(2);
         } else {
-            html += `<div class="phase-item" style="opacity: 0.6;"><span class="icon">OK</span> Alliance 2: ${metternichState.alliance2Region} -> ${metternichState.alliance2Nation}</div>`;
+            html += `<div class="phase-item" style="opacity: 0.6; margin-bottom: 1rem;">
+                <span class="icon">OK</span> <strong>${metternichState.alliance2Zone} - ${metternichState.alliance2Space}</strong>: Second alliance
+            </div>`;
             html += `<button class="btn phase-btn" onclick="finishMetternich()">Continue to Action Phase</button>`;
         }
     }
     
     document.getElementById('phaseContent').innerHTML = html;
-    document.getElementById('phaseBtn').style.display = 'none';
 }
 
-function renderMetternichBDIT(allianceNum) {
-    const prefix = `met${allianceNum}_`;
-    const keyRegionRoll = prefix + 'region_roll';
-    const keyNationRoll = prefix + 'nation_roll';
+function renderMetternichAlliance(allianceNum) {
+    const prefix = `a${allianceNum}_`;
     
-    // AU Main Map rules: 1-2 Germany, 3-4 Italy, 5-6 Balkans
-    const auRules = { 1: 'Germany', 2: 'Germany', 3: 'Italy', 4: 'Italy', 5: 'Balkans', 6: 'Balkans' };
-    
-    if (!metternichState[keyRegionRoll]) {
+    // Step 1: Roll for zone
+    if (!metternichState[prefix + 'zoneRoll']) {
         return `
             <div class="question-box" style="margin: 1rem 0;">
-                <div class="question-text">Alliance ${allianceNum}: Roll for region (AU Main Map)</div>
+                <div class="question-text">${allianceNum === 1 ? 'First' : 'Second'} Alliance - Roll Metternich die:</div>
                 <div class="question-btns">
-                    <button class="q-btn yes" onclick="rollMetternichRegion(${allianceNum})">Roll Die</button>
+                    <button class="q-btn yes" onclick="rollMetternichZone(${allianceNum})">Roll Die</button>
                 </div>
             </div>`;
     }
     
-    const regionRoll = metternichState[keyRegionRoll];
-    const region = auRules[regionRoll];
+    const zoneRoll = metternichState[prefix + 'zoneRoll'];
+    const zoneResult = getMetternichZoneResult(zoneRoll);
     
-    if (!metternichState[keyNationRoll]) {
+    // Germany zone - needs second roll for space
+    if (zoneResult.zone === 'Germany') {
+        if (!metternichState[prefix + 'spaceRoll']) {
+            return `
+                <div style="margin: 0.5rem 0;">
+                    ${diceHTML(zoneRoll, 'Zone Roll')}
+                    <div class="step-item" style="margin-top: 0.5rem;">
+                        <span class="step-icon">></span>
+                        <span class="step-text"><strong>Germany zone</strong> - Roll for space:</span>
+                    </div>
+                </div>
+                <div class="question-box">
+                    <div class="question-text">1-2: Hanover, 3-4: Saxony, 5-6: Bavaria</div>
+                    <div class="question-btns">
+                        <button class="q-btn yes" onclick="rollMetternichSpace(${allianceNum}, 'Germany')">Roll Die</button>
+                    </div>
+                </div>`;
+        }
+        const spaceRoll = metternichState[prefix + 'spaceRoll'];
+        const space = getMetternichGermanySpace(spaceRoll);
+        
+        // Auto-complete this alliance
+        metternichState[`alliance${allianceNum}Zone`] = 'Germany';
+        metternichState[`alliance${allianceNum}Space`] = space;
+        metternichState[`alliance${allianceNum}Done`] = true;
+        
+        // Re-render to show result
+        setTimeout(() => renderMetternichContent(), 0);
+        return `<div style="margin: 0.5rem 0;">${diceHTML(zoneRoll, 'Zone')} ${diceHTML(spaceRoll, 'Space')}</div>`;
+    }
+    
+    // Italy or Balkans - has default space with alternative option
+    if (!metternichState[prefix + 'spaceConfirmed']) {
+        // Check if alternative was triggered
+        if (metternichState[prefix + 'altTriggered']) {
+            if (zoneResult.zone === 'Italy') {
+                // Roll for Tuscany/Rome
+                if (!metternichState[prefix + 'altRoll']) {
+                    return `
+                        <div style="margin: 0.5rem 0;">
+                            ${diceHTML(zoneRoll, 'Zone Roll')}
+                            <div class="step-item" style="margin-top: 0.5rem;">
+                                <span class="step-icon">></span>
+                                <span class="step-text"><strong>Italy zone</strong> - Naples already allied, roll for alternative:</span>
+                            </div>
+                        </div>
+                        <div class="question-box">
+                            <div class="question-text">1-3: Tuscany, 4-6: Rome</div>
+                            <div class="question-btns">
+                                <button class="q-btn yes" onclick="rollMetternichAlt(${allianceNum}, 'Italy')">Roll Die</button>
+                            </div>
+                        </div>`;
+                }
+                const altRoll = metternichState[prefix + 'altRoll'];
+                const space = getMetternichItalyAltSpace(altRoll);
+                
+                metternichState[`alliance${allianceNum}Zone`] = 'Italy';
+                metternichState[`alliance${allianceNum}Space`] = space;
+                metternichState[`alliance${allianceNum}Done`] = true;
+                
+                setTimeout(() => renderMetternichContent(), 0);
+                return `<div style="margin: 0.5rem 0;">${diceHTML(zoneRoll, 'Zone')} ${diceHTML(altRoll, 'Alt')}</div>`;
+            } else {
+                // Balkans - Greece already allied, re-roll Metternich
+                metternichState[prefix + 'zoneRoll'] = null;
+                metternichState[prefix + 'altTriggered'] = false;
+                setTimeout(() => renderMetternichContent(), 0);
+                return '';
+            }
+        }
+        
         return `
             <div style="margin: 0.5rem 0;">
-                ${diceHTML(regionRoll, 'Region Roll')}
+                ${diceHTML(zoneRoll, 'Zone Roll')}
                 <div class="step-item" style="margin-top: 0.5rem;">
                     <span class="step-icon">></span>
-                    <span class="step-text">Alliance ${allianceNum} Region: <strong>${region}</strong></span>
+                    <span class="step-text"><strong>${zoneResult.zone} zone - ${zoneResult.space}</strong></span>
                 </div>
             </div>
             <div class="question-box">
-                <div class="question-text">Roll for nation in ${region}:</div>
                 <div class="question-btns">
-                    <button class="q-btn yes" onclick="rollMetternichNation(${allianceNum}, '${region}')">Roll Die</button>
+                    <button class="q-btn yes" onclick="confirmMetternichSpace(${allianceNum}, '${zoneResult.zone}', '${zoneResult.space}')">Confirm ${zoneResult.space}</button>
+                    <button class="q-btn" onclick="triggerMetternichAlt(${allianceNum})">${zoneResult.altText}</button>
                 </div>
             </div>`;
     }
@@ -244,20 +340,30 @@ function renderMetternichBDIT(allianceNum) {
     return '';
 }
 
-function rollMetternichRegion(allianceNum) {
-    metternichState[`met${allianceNum}_region_roll`] = rollDie();
+function rollMetternichZone(allianceNum) {
+    metternichState[`a${allianceNum}_zoneRoll`] = rollDie();
     renderMetternichContent();
 }
 
-function rollMetternichNation(allianceNum, region) {
-    const nationRoll = rollDie();
-    metternichState[`met${allianceNum}_nation_roll`] = nationRoll;
-    const nation = getBDITResult(region, nationRoll);
-    
-    metternichState[`alliance${allianceNum}Region`] = region;
-    metternichState[`alliance${allianceNum}Nation`] = nation;
+function rollMetternichSpace(allianceNum, zone) {
+    metternichState[`a${allianceNum}_spaceRoll`] = rollDie();
+    renderMetternichContent();
+}
+
+function rollMetternichAlt(allianceNum, zone) {
+    metternichState[`a${allianceNum}_altRoll`] = rollDie();
+    renderMetternichContent();
+}
+
+function triggerMetternichAlt(allianceNum) {
+    metternichState[`a${allianceNum}_altTriggered`] = true;
+    renderMetternichContent();
+}
+
+function confirmMetternichSpace(allianceNum, zone, space) {
+    metternichState[`alliance${allianceNum}Zone`] = zone;
+    metternichState[`alliance${allianceNum}Space`] = space;
     metternichState[`alliance${allianceNum}Done`] = true;
-    
     renderMetternichContent();
 }
 
@@ -273,6 +379,10 @@ function finishMetternich() {
     saveGame();
     renderApp();
 }
+
+// =====================================================
+// DECISION AREA RENDERING
+// =====================================================
 
 function renderDecisionArea() {
     const c = document.getElementById('decisionContent');
