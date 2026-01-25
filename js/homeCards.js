@@ -2,80 +2,86 @@
 
 const HOME_CARD_LOGIC = {
     // General pre-check for all home cards
+    // NOTE: This only affects whether to play for EVENT value, not the HC resolution itself
     _general: (dec, gs) => {
+        const ns = gs.nations[gs.activeNation];
         if (!dec.q_general) {
-            return { 
-                type: 'question', 
-                text: 'Is bot stability at 6 AND does the event give a player < 3 CPs value?', 
-                options: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}], 
-                key: 'q_general' 
-            };
+            // Only ask if stability is 6
+            if (ns.stability === 6) {
+                return { 
+                    type: 'question', 
+                    text: 'Bot stability is at 6. Does this Home Card event give < 3 CPs value?', 
+                    options: [{label: 'Yes (< 3 CP value)', value: 'yes'}, {label: 'No (≥ 3 CP value)', value: 'no'}], 
+                    key: 'q_general' 
+                };
+            }
+            // If stability not 6, skip this check
+            dec.q_general = 'no';
         }
-        if (dec.q_general === 'yes') {
-            return { 
-                type: 'action', 
-                text: 'Do not play for event. Bot will use CPs instead.', 
-                log: 'HC Condition: Not played for event (Stab 6)' 
-            };
-        }
-        return null; // Condition doesn't apply, proceed to nation-specific logic
+        // This check doesn't stop HC resolution, just notes if event shouldn't be played
+        return null;
     },
 
     // GERMANY
     GE: {
         '_default': (dec, gs) => {
-            const cardName = dec.card.name;
+            const ns = gs.nations.GE;
             
-            if (cardName === 'Otto von Bismarck') {
-                if (!dec.q1) {
-                    return { 
-                        type: 'question', 
-                        text: 'Does GE have armies equal to peacetime limit AND at least 1 reserve army?', 
-                        options: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}], 
-                        key: 'q1' 
+            // Check if German General Staff should be played instead of Bismarck
+            // Conditions: (1) last card and won't declare war, (2) Bismarck removed, (3) Germany unified
+            if (!dec.q_gss_check) {
+                if (ns.bismarckRemoved || ns.germanyUnified) {
+                    // Auto-play German General Staff
+                    return {
+                        type: 'action',
+                        text: `Play German General Staff (${ns.bismarckRemoved ? 'Bismarck removed' : 'Germany unified'}).`,
+                        log: 'HC Action: Play German General Staff'
                     };
                 }
-                if (dec.q1 === 'yes') {
-                    return { 
-                        type: 'action', 
-                        text: 'Play Bismarck to DECLARE WAR.', 
-                        log: 'HC Action: Play Bismarck for War' 
-                    };
-                }
+                // Need to check Bismarck conditions
+                dec.q_gss_check = 'done';
+            }
+
+            // Bismarck logic
+            if (!dec.q_bismarck) {
                 return { 
-                    type: 'action', 
-                    text: 'GE does not declare war. Place this HC on top of the card pile and play the next GE card.', 
-                    log: 'HC Action: Bismarck not played, play next card' 
+                    type: 'question', 
+                    text: 'Does GE have armies equal to their peacetime manpower limit AND at least 1 reserve army?', 
+                    options: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}], 
+                    key: 'q_bismarck' 
                 };
             }
             
-            if (cardName === 'German General Staff') {
-                if (!dec.q1) {
-                    return { 
-                        type: 'question', 
-                        text: 'Is this GE\'s last card and they won\'t declare war, OR is Bismarck removed, OR is Germany unified?', 
-                        options: [{label: 'Yes (any of these)', value: 'yes'}, {label: 'No (none of these)', value: 'no'}], 
-                        key: 'q1' 
-                    };
-                }
-                if (dec.q1 === 'yes') {
-                    return { 
-                        type: 'action', 
-                        text: 'Play German General Staff.', 
-                        log: 'HC Action: Play German General Staff' 
-                    };
-                }
+            if (dec.q_bismarck === 'yes') {
                 return { 
                     type: 'action', 
-                    text: 'Conditions not met. Play next card.', 
-                    log: 'HC Action: GGS not played' 
+                    text: 'Play Bismarck to DECLARE WAR. Use BDIT to choose target.', 
+                    log: 'HC Action: Play Bismarck (Declare War)' 
+                };
+            }
+            
+            // Bismarck not played - check if this is last card
+            if (!dec.q_last_card) {
+                return {
+                    type: 'question',
+                    text: 'Is this GE\'s last card for this action round?',
+                    options: [{label: 'Yes (last card)', value: 'yes'}, {label: 'No (more cards)', value: 'no'}],
+                    key: 'q_last_card'
+                };
+            }
+            
+            if (dec.q_last_card === 'yes') {
+                return {
+                    type: 'action',
+                    text: 'Last card and won\'t declare war. Play German General Staff instead.',
+                    log: 'HC Action: Play German General Staff (last card)'
                 };
             }
             
             return { 
                 type: 'action', 
-                text: `Unknown GE Home Card: ${cardName}. Please consult rules.`, 
-                log: `HC Action: Unknown GE Home Card` 
+                text: 'GE does not declare war. Place Bismarck on TOP of GE\'s card pile. Then reveal and play the NEXT GE card.', 
+                log: 'HC Action: Bismarck → top of pile, play next card' 
             };
         }
     },
@@ -83,28 +89,12 @@ const HOME_CARD_LOGIC = {
     // UNITED KINGDOM
     UK: {
         '_default': (dec, gs) => {
-            const cardName = dec.card.name;
-            
-            if (cardName === 'Sun Never Sets') {
-                return { 
-                    type: 'action', 
-                    text: 'Always play Sun Never Sets.', 
-                    log: 'HC Action: Play Sun Never Sets' 
-                };
-            }
-            
-            if (cardName === 'Balance of Power') {
-                return { 
-                    type: 'action', 
-                    text: 'This card is not played from hand. Its effect is triggered whenever a war is declared (roll 1-2 to play). Bot will use card for CPs.', 
-                    log: 'HC Action: BoP used for CPs' 
-                };
-            }
-            
+            // UK ALWAYS plays Sun Never Sets
+            // Balance of Power is a separate trigger (not played from hand)
             return { 
                 type: 'action', 
-                text: `Unknown UK Home Card: ${cardName}. Please consult rules.`, 
-                log: `HC Action: Unknown UK Home Card` 
+                text: 'Always play Sun Never Sets.\n\n⚠️ REMINDER: Balance of Power is not played from hand. Instead, every time ANY war is declared, roll a die. On 1-2, play Balance of Power if it\'s still unplayed.', 
+                log: 'HC Action: Play Sun Never Sets' 
             };
         }
     },
@@ -113,19 +103,19 @@ const HOME_CARD_LOGIC = {
     FR: {
         '_default': (dec, gs) => {
             if (!dec.roll1) dec.roll1 = rollDie();
-            let html = diceHTML(dec.roll1, 'FR HC Roll');
+            let html = diceHTML(dec.roll1, 'FR HC Roll (1 = Aux Armes)');
             
             if (dec.roll1 === 1) {
                 return { 
                     type: 'action', 
-                    text: 'Play Aux Armes, Citoyens!', 
+                    text: 'Roll = 1. Play Aux Armes, Citoyens!', 
                     log: 'HC Action: Play Aux Armes, Citoyens!', 
                     prefix: html 
                 };
             }
             return { 
                 type: 'action', 
-                text: 'Play The City of Light', 
+                text: `Roll = ${dec.roll1}. Play The City of Light.`, 
                 log: 'HC Action: Play The City of Light', 
                 prefix: html 
             };
@@ -135,45 +125,43 @@ const HOME_CARD_LOGIC = {
     // AUSTRIA-HUNGARY
     AU: {
         '_default': (dec, gs) => {
+            // Turn 1: Always Habsburg Dynasty
             if (gs.turn === 1) {
                 return { 
                     type: 'action', 
                     text: 'Turn 1: Play Habsburg Dynasty. Use the BDIT to choose a target.', 
-                    log: 'HC Action: Play Habsburg Dynasty (T1)' 
+                    log: 'HC Action: Play Habsburg Dynasty (Turn 1)' 
                 };
             }
             
+            // Later turns: Roll for which HC
             if (!dec.roll1) dec.roll1 = rollDie();
-            let html = diceHTML(dec.roll1, 'AU HC Roll (1-2 Habsburg, 3-6 Kaiserreich)');
+            let html = diceHTML(dec.roll1, 'AU HC Roll (1-2 = Habsburg)');
             
             if (dec.roll1 <= 2) {
-                if (!dec.q2) {
-                    return { 
-                        type: 'question', 
-                        text: 'Playing Habsburg Dynasty. Roll another die. On 1-2, AU declares a war of unification. Result?', 
-                        options: [{label:'1-2 (Declare War)', value:'war'}, {label:'3-6 (No War)', value:'nowar'}], 
-                        key:'q2', 
-                        prefix: html 
-                    };
-                }
-                if (dec.q2 === 'war') {
+                // Habsburg Dynasty - now roll for war of unification
+                if (!dec.roll2) dec.roll2 = rollDie();
+                let html2 = html + ' ' + diceHTML(dec.roll2, 'War Roll (1-2 = War)');
+                
+                if (dec.roll2 <= 2) {
                     return { 
                         type: 'action', 
-                        text: 'Play Habsburg Dynasty to declare a war of unification targeting a neighboring space with a granted citizenship nationality.', 
+                        text: 'Play Habsburg Dynasty to declare a WAR OF UNIFICATION targeting a neighboring space with a nationality that AU granted citizenship.', 
                         log: 'HC Action: Habsburg Dynasty (War of Unification)', 
-                        prefix: html
+                        prefix: html2
                     };
                 }
                 return { 
                     type: 'action', 
-                    text: 'Play Habsburg Dynasty for event/CPs (no war).', 
+                    text: `War roll = ${dec.roll2}. Play Habsburg Dynasty (no war).`, 
                     log: 'HC Action: Habsburg Dynasty (No War)', 
-                    prefix: html
+                    prefix: html2
                 };
             }
+            
             return { 
                 type: 'action', 
-                text: 'Play Kaiserreich.', 
+                text: `Roll = ${dec.roll1}. Play Kaiserreich.`, 
                 log: 'HC Action: Play Kaiserreich', 
                 prefix: html 
             };
@@ -184,23 +172,24 @@ const HOME_CARD_LOGIC = {
     RU: {
         '_default': (dec, gs) => {
             if (!dec.roll1) dec.roll1 = rollDie();
-            let html = diceHTML(dec.roll1, 'RU HC Roll (1-3 Russo-Turkish)');
+            let html = diceHTML(dec.roll1, 'RU HC Roll (1-3 = Russo-Turkish)');
             
             if (dec.roll1 <= 3) {
-                if (!dec.q1) {
+                // Check for OT truce
+                if (!dec.q_truce) {
                     return { 
                         type: 'question', 
-                        text: 'Does RU have a truce with OT?', 
-                        options: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}], 
-                        key: 'q1', 
+                        text: 'Roll 1-3: Would play Russo-Turkish Wars. Does RU have a truce with OT?', 
+                        options: [{label: 'Yes (has truce)', value: 'yes'}, {label: 'No truce', value: 'no'}], 
+                        key: 'q_truce', 
                         prefix: html 
                     };
                 }
-                if (dec.q1 === 'yes') {
+                if (dec.q_truce === 'yes') {
                     return { 
                         type: 'action', 
-                        text: 'Truce with OT. Play God Save the Tsar instead.', 
-                        log: 'HC Action: Play God Save the Tsar (truce)', 
+                        text: 'RU has truce with OT. Play God Save the Tsar instead.', 
+                        log: 'HC Action: Play God Save the Tsar (OT truce)', 
                         prefix: html 
                     };
                 }
@@ -211,9 +200,10 @@ const HOME_CARD_LOGIC = {
                     prefix: html 
                 };
             }
+            
             return { 
                 type: 'action', 
-                text: 'Play God Save the Tsar.', 
+                text: `Roll = ${dec.roll1}. Play God Save the Tsar.`, 
                 log: 'HC Action: Play God Save the Tsar', 
                 prefix: html 
             };
@@ -223,28 +213,32 @@ const HOME_CARD_LOGIC = {
     // OTTOMAN EMPIRE
     OT: {
         '_default': (dec, gs) => {
-            if (gs.nations.OT.industry < 3) {
+            const ns = gs.nations.OT;
+            
+            // Industry < 3: ALWAYS play Modernization
+            if (ns.industry < 3) {
                 return { 
                     type: 'action', 
-                    text: 'Industry < 3: Always play Modernization. (Note: Other bots will not give OT a 3 CP card for this event).', 
-                    log: 'HC Action: Play Modernization' 
+                    text: `Industry = ${ns.industry} (< 3): Always play Modernization.\n\n📝 Note: Other bots will not give OT a 3 CP card.`, 
+                    log: 'HC Action: Play Modernization (Industry < 3)' 
                 };
             }
             
+            // Industry >= 3: Roll for Jihad
             if (!dec.roll1) dec.roll1 = rollDie();
-            let html = diceHTML(dec.roll1, 'OT HC Roll (1-2 Jihad)');
+            let html = diceHTML(dec.roll1, 'OT HC Roll (1-2 = Jihad)');
             
             if (dec.roll1 <= 2) {
                 return { 
                     type: 'action', 
-                    text: 'Play Jihad.', 
+                    text: 'Industry ≥ 3 and roll = 1-2. Play Jihad.', 
                     log: 'HC Action: Play Jihad', 
                     prefix: html 
                 };
             }
             return { 
                 type: 'action', 
-                text: 'Roll > 2. Play Modernization.', 
+                text: `Industry ≥ 3 and roll = ${dec.roll1}. Play Modernization.`, 
                 log: 'HC Action: Play Modernization', 
                 prefix: html 
             };
