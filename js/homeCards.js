@@ -116,20 +116,19 @@ const HOME_CARD_LOGIC = {
     // AUSTRIA-HUNGARY
     AU: {
         '_default': (dec, gs) => {
-            // Turn 1: Always Habsburg Dynasty with BDIT roll on Main Map
+            // Turn 1: Always Habsburg Dynasty with BDIT
             if (gs.turn === 1) {
-                // Roll BDIT on Main Map
-                const bdit = renderBDITRollMainMapOnly(dec, 'au_t1_', 'Habsburg Dynasty Target');
+                const bdit = renderBDITRoll(dec, 'au_t1_', 'Habsburg Dynasty Target');
                 if (bdit.type !== 'bdit_result') {
                     return { 
                         type: 'custom', 
-                        html: `<div class="step-item action"><span class="step-icon">></span><span class="step-text">Turn 1: Play Habsburg Dynasty. Roll BDIT on Main Map for target.</span></div>${bdit.html}`
+                        html: `<div class="step-item action"><span class="step-icon">></span><span class="step-text">Turn 1: Play Habsburg Dynasty. Roll BDIT for target zone.</span></div>${bdit.html}`
                     };
                 }
                 return { 
                     type: 'action', 
-                    text: `Turn 1: Play Habsburg Dynasty.\n\nBDIT Target: ${bdit.region} -> ${bdit.nation}`, 
-                    log: `HC Action: Play Habsburg Dynasty (T1 - ${bdit.region} -> ${bdit.nation})`,
+                    text: `Turn 1: Play Habsburg Dynasty.\n\nBDIT Target Zone: ${bdit.zone}`, 
+                    log: `HC Action: Play Habsburg Dynasty (T1 - ${bdit.zone})`,
                     prefix: bdit.html
                 };
             }
