@@ -393,3 +393,174 @@ body { font-family: 'Crimson Text', Georgia, serif; background: var(--bg-dark); 
 
 .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); animation: fadeInUp 0.35s ease-out; }
 .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.4; }
+
+/* Metternich portrait */
+.metternich-portrait {
+    width: 80px;
+    height: 100px;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    border-radius: 4px;
+    float: right;
+    margin-left: 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* ==================== */
+/* MOBILE RESPONSIVE    */
+/* ==================== */
+@media (max-width: 900px) {
+    .main-layout {
+        flex-direction: column;
+    }
+    .log-panel {
+        display: none;
+    }
+    .state-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        max-height: 200px;
+    }
+    .state-panel h3 {
+        display: none;
+    }
+    #stateCards {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    .state-card {
+        min-width: 140px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .screen h1 {
+        font-size: 1.6rem;
+        letter-spacing: 0.1em;
+    }
+    .screen .subtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+    .game-slots {
+        flex-direction: column;
+        width: 100%;
+    }
+    .game-slot {
+        min-width: auto;
+        padding: 1.5rem;
+    }
+    .game-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    .game-actions .btn {
+        width: 100%;
+    }
+    .setup-nations {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .top-bar {
+        padding: 0.5rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .top-bar-left {
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .app-title {
+        font-size: 0.85rem;
+    }
+    .stat-pill {
+        font-size: 0.8rem;
+    }
+    .phase-badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .nation-bar {
+        padding: 0.5rem;
+        overflow-x: auto;
+        gap: 0.4rem;
+    }
+    .nation-tab {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    .nation-tab .flag-img {
+        width: 20px;
+        height: 13px;
+    }
+    .decision-content {
+        padding: 1rem;
+    }
+    .card-input-area {
+        max-width: 100%;
+    }
+    .card-input {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    .decision-tree {
+        max-width: 100%;
+    }
+    .tree-card {
+        padding: 0.75rem 1rem;
+    }
+    .tree-card-name {
+        font-size: 1rem;
+    }
+    .step-item {
+        padding: 0.6rem 0.75rem;
+    }
+    .question-box {
+        padding: 0.75rem;
+    }
+    .question-btns {
+        flex-direction: column;
+    }
+    .q-btn {
+        min-width: auto;
+    }
+    .dice-box {
+        margin: 0.4rem 0.4rem 0.4rem 0;
+    }
+    .dice {
+        width: 40px;
+        height: 40px;
+        padding: 5px;
+    }
+    .dice .dot {
+        width: 6px;
+        height: 6px;
+    }
+    .dice-label {
+        font-size: 0.65rem;
+    }
+    .phase-modal {
+        padding: 1.5rem;
+        max-width: 95%;
+    }
+    .phase-modal h2 {
+        font-size: 1.2rem;
+    }
+    .metternich-portrait {
+        width: 60px;
+        height: 75px;
+    }
+    .state-card {
+        min-width: 120px;
+    }
+    .state-nation .flag-img {
+        width: 16px;
+        height: 11px;
+    }
+}
