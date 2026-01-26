@@ -4,8 +4,27 @@ function rollDie() {
     return Math.floor(Math.random() * 6) + 1;
 }
 
+// Dice dot patterns (positions in 3x3 grid, 0-indexed)
+const DICE_PATTERNS = {
+    1: [4],
+    2: [0, 8],
+    3: [0, 4, 8],
+    4: [0, 2, 6, 8],
+    5: [0, 2, 4, 6, 8],
+    6: [0, 2, 3, 5, 6, 8]
+};
+
 function diceHTML(val, label = '') {
-    return `<div class="dice-box"><div class="dice">${val}</div>${label ? `<span class="dice-label">${label}</span>` : ''}</div>`;
+    const pattern = DICE_PATTERNS[val] || [];
+    let dotsHTML = '';
+    for (let i = 0; i < 9; i++) {
+        if (pattern.includes(i)) {
+            dotsHTML += '<div class="dot"></div>';
+        } else {
+            dotsHTML += '<div></div>';
+        }
+    }
+    return `<div class="dice-box"><div class="dice">${dotsHTML}</div>${label ? `<span class="dice-label">${label}</span>` : ''}</div>`;
 }
 
 // =====================================================
