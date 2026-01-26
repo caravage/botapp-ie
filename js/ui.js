@@ -1,5 +1,15 @@
 // ui.js - UI rendering functions
 
+// Flag URLs from Wikimedia Commons
+const FLAGS = {
+    'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Flag_of_the_German_Empire.svg/40px-Flag_of_the_German_Empire.svg.png',
+    'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Flag_of_the_United_Kingdom.svg/40px-Flag_of_the_United_Kingdom.svg.png',
+    'FR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/40px-Flag_of_France.svg.png',
+    'AU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Flag_of_Austria-Hungary_%281869-1918%29.svg/40px-Flag_of_Austria-Hungary_%281869-1918%29.svg.png',
+    'RU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Flag_of_Russia.svg/40px-Flag_of_Russia.svg.png',
+    'OT': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg/40px-Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg.png'
+};
+
 function renderNationBar() {
     const c = document.getElementById('nationBar');
     c.innerHTML = NATIONS.map(n => {
@@ -10,7 +20,7 @@ function renderNationBar() {
             !ns.isBot ? 'is-player' : '',
             gameState.actionsDoneThisRound.includes(n) && ns.isBot ? 'done' : ''
         ].filter(Boolean).join(' ');
-        return `<div class="${cls}" onclick="selectNation('${n}')">${n}</div>`;
+        return `<div class="${cls}" onclick="selectNation('${n}')"><img class="flag-img" src="${FLAGS[n]}" alt="${n}">${n}</div>`;
     }).join('');
 }
 
@@ -41,7 +51,7 @@ function renderStatePanel() {
         return `
             <div class="state-card ${ns.isBot ? '' : 'is-player'}">
                 <div class="state-header">
-                    <span class="state-nation">${n}</span>
+                    <span class="state-nation"><img class="flag-img" src="${FLAGS[n]}" alt="${n}">${n}</span>
                     <span class="state-badge ${ns.isBot ? '' : 'player'}">${ns.isBot ? 'Bot' : 'Player'}</span>
                 </div>
                 <div class="state-stats">
