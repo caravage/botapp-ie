@@ -5,7 +5,7 @@ const FLAGS = {
     'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Flag_of_Germany_%281867%E2%80%931918%29.svg/1280px-Flag_of_Germany_%281867%E2%80%931918%29.svg.png',
     'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1280px-Flag_of_the_United_Kingdom_%281-2%29.svg.png',
     'FR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/40px-Flag_of_France.svg.png',
-    'AU': 'AU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg/1280px-Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg.png',
+    'AU':  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg/1280px-Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg.png',
     'RU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Flag_of_Russia.svg/40px-Flag_of_Russia.svg.png',
     'OT': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg/40px-Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg.png'
 };
