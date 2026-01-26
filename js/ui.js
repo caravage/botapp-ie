@@ -2,10 +2,10 @@
 
 // Flag URLs from Wikimedia Commons
 const FLAGS = {
-    'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Flag_of_Germany_%281867%E2%80%931918%29.svg/1280px-Flag_of_Germany_%281867%E2%80%931918%29.svg.png',
-    'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1280px-Flag_of_the_United_Kingdom_%281-2%29.svg.png',
+    'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Flag_of_the_German_Empire.svg/40px-Flag_of_the_German_Empire.svg.png',
+    'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Flag_of_the_United_Kingdom.svg/40px-Flag_of_the_United_Kingdom.svg.png',
     'FR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/40px-Flag_of_France.svg.png',
-    'AU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg/1280px-Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg.png',
+    'AU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Flag_of_Austria-Hungary_%281869-1918%29.svg/40px-Flag_of_Austria-Hungary_%281869-1918%29.svg.png',
     'RU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Flag_of_Russia.svg/40px-Flag_of_Russia.svg.png',
     'OT': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg/40px-Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg.png'
 };
@@ -217,6 +217,7 @@ function getMetternichItalyAltSpace(roll) {
 
 function renderMetternichContent() {
     let html = `
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Prince_Metternich_by_Lawrence.jpeg/960px-Prince_Metternich_by_Lawrence.jpeg" alt="Metternich" class="metternich-portrait">
         <div class="phase-item" style="margin-bottom: 1rem;">
             AU gains an alliance with two minor powers that do not contain an opponent's diplomatic marker.
         </div>`;
@@ -236,7 +237,15 @@ function renderMetternichContent() {
             html += `<div class="phase-item" style="opacity: 0.6; margin-bottom: 1rem;">
                 <span class="icon">OK</span> <strong>${metternichState.alliance2Zone} - ${metternichState.alliance2Space}</strong>: Second alliance
             </div>`;
-            html += `<button class="btn phase-btn" onclick="finishMetternich()">Continue to Action Phase</button>`;
+            
+            // Check if both alliances are the same
+            const sameAlliance = (metternichState.alliance1Zone === metternichState.alliance2Zone && 
+                                  metternichState.alliance1Space === metternichState.alliance2Space);
+            
+            html += `<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn phase-btn" style="flex: 1;" onclick="finishMetternich()">Continue to Action Phase</button>
+                ${sameAlliance ? `<button class="btn btn-secondary phase-btn" style="flex: 1;" onclick="rerollSecondAlliance()">Reroll 2nd Alliance</button>` : ''}
+            </div>`;
         }
     }
     
@@ -374,6 +383,19 @@ function confirmMetternichSpace(allianceNum, zone, space) {
     metternichState[`alliance${allianceNum}Zone`] = zone;
     metternichState[`alliance${allianceNum}Space`] = space;
     metternichState[`alliance${allianceNum}Done`] = true;
+    renderMetternichContent();
+}
+
+function rerollSecondAlliance() {
+    // Reset second alliance state
+    metternichState.alliance2Done = false;
+    metternichState.alliance2Zone = null;
+    metternichState.alliance2Space = null;
+    metternichState.a2_zoneRoll = null;
+    metternichState.a2_spaceRoll = null;
+    metternichState.a2_altRoll = null;
+    metternichState.a2_altTriggered = false;
+    metternichState.a2_spaceConfirmed = false;
     renderMetternichContent();
 }
 
