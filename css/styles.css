@@ -319,8 +319,21 @@ body { font-family: 'Crimson Text', Georgia, serif; background: var(--bg-dark); 
 .state-stats { display: flex; gap: 0.3rem; margin-bottom: 0.4rem; }
 .state-stat { flex: 1; text-align: center; background: var(--bg-panel); padding: 0.3rem; }
 .state-stat .lbl { font-size: 0.6rem; color: var(--text-muted); display: block; }
-.state-stat .val { font-family: 'Cinzel', serif; color: var(--cream); cursor: pointer; }
-.state-stat .val:hover { color: var(--gold); }
+.state-stat .val { font-family: 'Cinzel', serif; color: var(--cream); }
+.stat-controls { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
+.stat-btn { 
+    width: 16px; 
+    height: 16px; 
+    font-size: 0.7rem; 
+    color: var(--text-muted); 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 2px;
+    transition: all 0.15s;
+}
+.stat-btn:hover { color: var(--gold); background: var(--bg-card); }
 .state-flags { display: flex; flex-wrap: wrap; gap: 0.2rem; }
 .state-flags .flag { font-size: 0.65rem; padding: 0.15rem 0.3rem; background: var(--bg-panel); color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
 .state-flags .flag.on { background: var(--gold-dark); color: var(--cream); }
