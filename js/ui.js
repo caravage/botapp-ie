@@ -2,10 +2,10 @@
 
 // Flag URLs from Wikimedia Commons
 const FLAGS = {
-    'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Flag_of_Germany_%281867%E2%80%931918%29.svg/1280px-Flag_of_Germany_%281867%E2%80%931918%29.svg.png',
-    'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1280px-Flag_of_the_United_Kingdom_%281-2%29.svg.png',
+    'GE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Flag_of_the_German_Empire.svg/40px-Flag_of_the_German_Empire.svg.png',
+    'UK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Flag_of_the_United_Kingdom.svg/40px-Flag_of_the_United_Kingdom.svg.png',
     'FR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/40px-Flag_of_France.svg.png',
-    'AU':  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg/1280px-Ensign_of_Austro-Hungarian_civil_fleet_%281869-1918%29.svg.png',
+    'AU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Flag_of_Austria-Hungary_%281869-1918%29.svg/40px-Flag_of_Austria-Hungary_%281869-1918%29.svg.png',
     'RU': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Flag_of_Russia.svg/40px-Flag_of_Russia.svg.png',
     'OT': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg/40px-Flag_of_the_Ottoman_Empire_%281844%E2%80%931922%29.svg.png'
 };
@@ -55,9 +55,30 @@ function renderStatePanel() {
                     <span class="state-badge ${ns.isBot ? '' : 'player'}">${ns.isBot ? 'Bot' : 'Player'}</span>
                 </div>
                 <div class="state-stats">
-                    <div class="state-stat"><span class="lbl">Stab</span><span class="val">${ns.stability}</span></div>
-                    <div class="state-stat"><span class="lbl">Ind</span><span class="val">${ns.industry}</span></div>
-                    <div class="state-stat"><span class="lbl">Cards</span><span class="val">${ns.cards}</span></div>
+                    <div class="state-stat">
+                        <span class="lbl">Stab</span>
+                        <div class="stat-controls">
+                            <span class="stat-btn" onclick="adjustStat('${n}','stability',-1)">-</span>
+                            <span class="val">${ns.stability}</span>
+                            <span class="stat-btn" onclick="adjustStat('${n}','stability',1)">+</span>
+                        </div>
+                    </div>
+                    <div class="state-stat">
+                        <span class="lbl">Ind</span>
+                        <div class="stat-controls">
+                            <span class="stat-btn" onclick="adjustStat('${n}','industry',-1)">-</span>
+                            <span class="val">${ns.industry}</span>
+                            <span class="stat-btn" onclick="adjustStat('${n}','industry',1)">+</span>
+                        </div>
+                    </div>
+                    <div class="state-stat">
+                        <span class="lbl">Cards</span>
+                        <div class="stat-controls">
+                            <span class="stat-btn" onclick="adjustStat('${n}','cards',-1)">-</span>
+                            <span class="val">${ns.cards}</span>
+                            <span class="stat-btn" onclick="adjustStat('${n}','cards',1)">+</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="state-flags">
                     ${flags.map(f => `<span class="flag ${ns[f.k] ? 'on' : ''}" onclick="toggleFlag('${n}','${f.k}')">${f.l}</span>`).join('')}
@@ -68,6 +89,12 @@ function renderStatePanel() {
 
 function toggleFlag(n, k) {
     gameState.nations[n][k] = !gameState.nations[n][k];
+    saveGame();
+    renderStatePanel();
+}
+
+function adjustStat(n, stat, delta) {
+    gameState.nations[n][stat] = Math.max(0, gameState.nations[n][stat] + delta);
     saveGame();
     renderStatePanel();
 }
